@@ -13,13 +13,114 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, mm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    PageBreak, Image, HRFlowable, ListFlowable, ListItem
+    PageBreak, Image, HRFlowable, ListFlowable, ListItem, Flowable
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
-from reportlab.graphics.shapes import Drawing, Rect, String, Circle
+from reportlab.graphics.shapes import Drawing, Rect, String, Circle, Wedge, Line
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from dataclasses import asdict
+import math
+
+
+class ScoreGauge(Flowable):
+    """Custom flowable for a colorful score gauge"""
+    
+    def __init__(self, score, width=200, height=200):
+        Flowable.__init__(self)
+        self.score = score
+        self.width = width
+        self.height = height
+        
+    def draw(self):
+        canvas = self.canv
+        cx, cy = self.width / 2, self.height / 2
+        radius = min(self.width, self.height) / 2 - 10
+        
+        # Determine color based on score
+        if self.score >= 80:
+            main_color = colors.HexColor('#10b981')  # Green
+            bg_color = colors.HexColor('#d1fae5')
+        elif self.score >= 60:
+            main_color = colors.HexColor('#f59e0b')  # Amber
+            bg_color = colors.HexColor('#fef3c7')
+        elif self.score >= 40:
+            main_color = colors.HexColor('#f97316')  # Orange
+            bg_color = colors.HexColor('#ffedd5')
+        else:
+            main_color = colors.HexColor('#ef4444')  # Red
+            bg_color = colors.HexColor('#fee2e2')
+        
+        # Draw background circle
+        canvas.setFillColor(bg_color)
+        canvas.setStrokeColor(colors.HexColor('#e5e7eb'))
+        canvas.setLineWidth(2)
+        canvas.circle(cx, cy, radius, fill=1, stroke=1)
+        
+        # Draw progress arc
+        canvas.setStrokeColor(main_color)
+        canvas.setLineWidth(12)
+        start_angle = 90
+        extent = -3.6 * self.score  # 360 degrees = 100%
+        
+        # Draw arc using wedge
+        canvas.setFillColor(colors.white)
+        canvas.circle(cx, cy, radius - 15, fill=1, stroke=0)
+        
+        # Draw colored ring
+        canvas.setStrokeColor(main_color)
+        canvas.setLineWidth(15)
+        
+        # Draw arc segments
+        for i in range(int(self.score)):
+            angle = math.radians(90 - i * 3.6)
+            x1 = cx + (radius - 7) * math.cos(angle)
+            y1 = cy + (radius - 7) * math.sin(angle)
+            canvas.setFillColor(main_color)
+            canvas.circle(x1, y1, 6, fill=1, stroke=0)
+        
+        # Draw inner white circle
+        canvas.setFillColor(colors.white)
+        canvas.circle(cx, cy, radius - 25, fill=1, stroke=0)
+        
+        # Draw score text
+        canvas.setFillColor(main_color)
+        canvas.setFont('Helvetica-Bold', 48)
+        canvas.drawCentredString(cx, cy + 5, str(self.score))
+        
+        # Draw "out of 100" text
+        canvas.setFillColor(colors.HexColor('#6b7280'))
+        canvas.setFont('Helvetica', 12)
+        canvas.drawCentredString(cx, cy - 25, 'out of 100')
+
+
+class ColorfulHeader(Flowable):
+    """Custom flowable for colorful header with gradient effect"""
+    
+    def __init__(self, width=500, height=80):
+        Flowable.__init__(self)
+        self.width = width
+        self.height = height
+        
+    def draw(self):
+        canvas = self.canv
+        
+        # Draw gradient-like background with rectangles
+        gradient_colors = [
+            colors.HexColor('#6366f1'),
+            colors.HexColor('#8b5cf6'),
+            colors.HexColor('#a855f7'),
+        ]
+        
+        stripe_width = self.width / len(gradient_colors)
+        for i, color in enumerate(gradient_colors):
+            canvas.setFillColor(color)
+            canvas.rect(i * stripe_width, 0, stripe_width + 1, self.height, fill=1, stroke=0)
+        
+        # Draw title text
+        canvas.setFillColor(colors.white)
+        canvas.setFont('Helvetica-Bold', 28)
+        canvas.drawCentredString(self.width / 2, self.height / 2 - 5, 'SEO HEALTH REPORT')
 
 
 class SEOPDFReportGenerator:
@@ -145,6 +246,25 @@ class SEOPDFReportGenerator:
         }
         return explanations.get(grade, "Your website needs SEO improvements.")
     
+    def _create_stat_card(self, label, value, text_color, bg_color):
+        """Create a colorful stat card as a table"""
+        card = Table([
+            [Paragraph(f'<font color="{text_color}" size="28"><b>{value}</b></font>', 
+                      ParagraphStyle('StatValue', alignment=TA_CENTER))],
+            [Paragraph(f'<font color="{text_color}" size="10"><b>{label}</b></font>', 
+                      ParagraphStyle('StatLabel', alignment=TA_CENTER))]
+        ], colWidths=[150])
+        card.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor(bg_color)),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, 0), 15),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 5),
+            ('TOPPADDING', (0, 1), (-1, 1), 0),
+            ('BOTTOMPADDING', (0, 1), (-1, 1), 12),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor(text_color)),
+        ]))
+        return card
+    
     def _create_score_visual(self, score, size=120):
         """Create a visual score circle"""
         drawing = Drawing(size, size)
@@ -255,11 +375,11 @@ class SEOPDFReportGenerator:
     def _priority_action(self, issue_type, count):
         """Generate priority action based on issue type"""
         if issue_type == 'critical' and count > 0:
-            return f"🚨 You have {count} critical issue(s) that need immediate attention. These are hurting your search rankings right now."
+            return f"CRITICAL: You have {count} critical issue(s) that need immediate attention. These are hurting your search rankings right now."
         elif issue_type == 'warning' and count > 0:
-            return f"⚠️ You have {count} warning(s) that should be fixed soon. These could be affecting your visibility."
+            return f"WARNING: You have {count} warning(s) that should be fixed soon. These could be affecting your visibility."
         elif issue_type == 'recommendation' and count > 0:
-            return f"💡 You have {count} suggestion(s) for improvement. These are nice-to-have optimizations."
+            return f"TIP: You have {count} suggestion(s) for improvement. These are nice-to-have optimizations."
         return ""
     
     def generate_pdf(self):
@@ -268,83 +388,111 @@ class SEOPDFReportGenerator:
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
-            rightMargin=50,
-            leftMargin=50,
-            topMargin=50,
-            bottomMargin=50
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=30,
+            bottomMargin=40
         )
         
         story = []
         r = self.result
         
         # ===== COVER PAGE =====
-        story.append(Spacer(1, 50))
-        story.append(Paragraph("🔍 SEO Health Report", self.styles['ReportTitle']))
-        story.append(Spacer(1, 20))
+        # Colorful Header Banner
+        story.append(ColorfulHeader(width=515, height=70))
+        story.append(Spacer(1, 25))
         
-        # URL
-        story.append(Paragraph(f"<b>Website:</b> {r.url}", self.styles['CustomBody']))
-        story.append(Paragraph(f"<b>Report Date:</b> {r.audit_date}", self.styles['CustomBody']))
+        # Website info in a nice box
+        url_table = Table([
+            [Paragraph(f'<font color="#6366f1"><b>Website Analyzed</b></font>', self.styles['Normal'])],
+            [Paragraph(f'<font color="#1e293b" size="14">{r.url}</font>', self.styles['Normal'])],
+            [Paragraph(f'<font color="#64748b" size="9">Report generated on {r.audit_date}</font>', self.styles['Normal'])]
+        ], colWidths=[515])
+        url_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+        ]))
+        story.append(url_table)
         story.append(Spacer(1, 30))
         
-        # Main Score
-        score_color = self._get_score_color(r.score)
-        story.append(Paragraph(
-            f'<font color="{score_color.hexval()}" size="72"><b>{r.score}</b></font>',
-            ParagraphStyle('BigScore', alignment=TA_CENTER)
-        ))
-        story.append(Paragraph(
-            f'<font color="{score_color.hexval()}" size="24">Grade: {r.grade}</font>',
-            ParagraphStyle('Grade', alignment=TA_CENTER)
-        ))
-        story.append(Spacer(1, 20))
+        # Score Gauge - Centered
+        score_gauge = ScoreGauge(r.score, width=180, height=180)
+        score_table = Table([[score_gauge]], colWidths=[515])
+        score_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ]))
+        story.append(score_table)
+        story.append(Spacer(1, 15))
+        
+        # Grade Badge
+        grade_color = self._get_score_color(r.score)
+        grade_text = f'Grade: {r.grade}'
+        grade_table = Table([[Paragraph(
+            f'<font color="white" size="16"><b>{grade_text}</b></font>',
+            ParagraphStyle('GradeBadge', alignment=TA_CENTER)
+        )]], colWidths=[120])
+        grade_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), grade_color),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LEFTPADDING', (0, 0), (-1, -1), 20),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 20),
+        ]))
+        grade_wrapper = Table([[grade_table]], colWidths=[515])
+        grade_wrapper.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER')]))
+        story.append(grade_wrapper)
+        story.append(Spacer(1, 15))
         
         # Grade explanation
         story.append(Paragraph(
-            self._get_grade_explanation(r.grade, r.score),
-            ParagraphStyle('GradeExplain', parent=self.styles['CustomBody'], 
-                          alignment=TA_CENTER, fontSize=14)
+            f'<font color="#475569">{self._get_grade_explanation(r.grade, r.score)}</font>',
+            ParagraphStyle('GradeExplain', alignment=TA_CENTER, fontSize=12, leading=18)
         ))
+        story.append(Spacer(1, 30))
         
-        story.append(Spacer(1, 40))
-        
-        # Quick Stats Table
-        quick_stats = [
-            ['✅ Passed Checks', '⚠️ Warnings', '❌ Critical Issues'],
-            [str(r.checks_passed), str(r.checks_warnings), str(r.checks_failed)]
+        # Quick Stats - Colorful Cards
+        stats_data = [
+            [
+                self._create_stat_card('PASSED', str(r.checks_passed), '#10b981', '#d1fae5'),
+                self._create_stat_card('WARNINGS', str(r.checks_warnings), '#f59e0b', '#fef3c7'),
+                self._create_stat_card('CRITICAL', str(r.checks_failed), '#ef4444', '#fee2e2'),
+            ]
         ]
         
-        stats_table = Table(quick_stats, colWidths=[150, 150, 150])
+        stats_table = Table(stats_data, colWidths=[165, 165, 165])
         stats_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#334155')),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 11),
-            ('FONTSIZE', (0, 1), (-1, 1), 24),
-            ('TEXTCOLOR', (0, 1), (0, 1), colors.HexColor('#16a34a')),
-            ('TEXTCOLOR', (1, 1), (1, 1), colors.HexColor('#ca8a04')),
-            ('TEXTCOLOR', (2, 1), (2, 1), colors.HexColor('#dc2626')),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('TOPPADDING', (0, 1), (-1, 1), 15),
-            ('BOTTOMPADDING', (0, 1), (-1, 1), 15),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
-            ('ROUNDEDCORNERS', [5, 5, 5, 5]),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
         story.append(stats_table)
         
         story.append(PageBreak())
         
         # ===== EXECUTIVE SUMMARY =====
-        story.append(Paragraph("📋 Executive Summary", self.styles['SectionHeader']))
+        story.append(Paragraph('<font color="#6366f1"><b>EXECUTIVE SUMMARY</b></font>', 
+                              ParagraphStyle('SectionHead', fontSize=16, spaceAfter=10)))
         story.append(Paragraph(
             "This section provides a quick overview of your website's SEO health in plain English.",
             self.styles['Explanation']
         ))
         story.append(Spacer(1, 10))
         
-        # What's Working Well
-        story.append(Paragraph("✅ What's Working Well", self.styles['SubHeader']))
+        # What's Working Well - Green header
+        working_header = Table([[Paragraph('<font color="white"><b>WHAT\'S WORKING WELL</b></font>', 
+                                          ParagraphStyle('GreenHeader', alignment=TA_LEFT, fontSize=11))]], 
+                               colWidths=[515])
+        working_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#10b981')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(working_header)
+        story.append(Spacer(1, 5))
         
         good_items = []
         if r.has_ssl:
@@ -366,14 +514,24 @@ class SEOPDFReportGenerator:
         
         if good_items:
             for item in good_items[:6]:
-                story.append(Paragraph(f"• {item}", self.styles['CustomBody']))
+                story.append(Paragraph(f'<font color="#10b981"><b>+</b></font> {item}', self.styles['CustomBody']))
         else:
-            story.append(Paragraph("• Your website has potential - let's work on improvements!", self.styles['CustomBody']))
+            story.append(Paragraph('<font color="#10b981"><b>+</b></font> Your website has potential - let\'s work on improvements!', self.styles['CustomBody']))
         
         story.append(Spacer(1, 15))
         
-        # What Needs Attention
-        story.append(Paragraph("⚠️ What Needs Attention", self.styles['SubHeader']))
+        # What Needs Attention - Orange/Red header
+        attention_header = Table([[Paragraph('<font color="white"><b>WHAT NEEDS ATTENTION</b></font>', 
+                                            ParagraphStyle('OrangeHeader', alignment=TA_LEFT, fontSize=11))]], 
+                                 colWidths=[515])
+        attention_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f59e0b')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(attention_header)
+        story.append(Spacer(1, 5))
         
         attention_items = []
         if not r.has_ssl:
@@ -395,31 +553,32 @@ class SEOPDFReportGenerator:
         
         if attention_items:
             for item in attention_items[:6]:
-                story.append(Paragraph(f"• {item}", self.styles['CustomBody']))
+                story.append(Paragraph(f'<font color="#f59e0b"><b>!</b></font> {item}', self.styles['CustomBody']))
         else:
-            story.append(Paragraph("• Great job! No major issues found.", self.styles['CustomBody']))
+            story.append(Paragraph('<font color="#10b981"><b>+</b></font> Great job! No major issues found.', self.styles['CustomBody']))
         
         story.append(PageBreak())
         
         # ===== CATEGORY SCORES =====
-        story.append(Paragraph("📊 Score Breakdown by Category", self.styles['SectionHeader']))
+        story.append(Paragraph('<font color="#6366f1"><b>SCORE BREAKDOWN BY CATEGORY</b></font>', 
+                              ParagraphStyle('SectionHead2', fontSize=16, spaceAfter=10)))
         story.append(Paragraph(
             "See how your website performs in different areas. Higher scores are better (out of 100).",
             self.styles['Explanation']
         ))
         story.append(Spacer(1, 15))
         
-        # Category scores table with explanations
+        # Category scores table with explanations - no emojis
         categories_data = [
             ['Category', 'Score', 'Status', 'What This Means'],
-            ['📋 Page Information', f'{r.meta_tags_score}/100', self._get_status_text(r.meta_tags_score), 'Title & description for search results'],
-            ['📝 Content Quality', f'{r.content_score}/100', self._get_status_text(r.content_score), 'How good your written content is'],
-            ['⚙️ Technical Setup', f'{r.technical_seo_score}/100', self._get_status_text(r.technical_seo_score), 'Behind-the-scenes optimization'],
-            ['📱 Mobile Experience', f'{r.ux_score}/100', self._get_status_text(r.ux_score), 'How well it works on phones'],
-            ['🔗 Links', f'{r.links_score}/100', self._get_status_text(r.links_score), 'Internal & external linking'],
-            ['🖼️ Images', f'{r.images_score}/100', self._get_status_text(r.images_score), 'Image optimization'],
-            ['🔒 Security', f'{r.security_headers_score}/100', self._get_status_text(r.security_headers_score), 'Website security setup'],
-            ['♿ Accessibility', f'{r.accessibility_score}/100', self._get_status_text(r.accessibility_score), 'Usability for all visitors'],
+            ['Page Information', f'{r.meta_tags_score}/100', self._get_status_text(r.meta_tags_score), 'Title & description for search results'],
+            ['Content Quality', f'{r.content_score}/100', self._get_status_text(r.content_score), 'How good your written content is'],
+            ['Technical Setup', f'{r.technical_seo_score}/100', self._get_status_text(r.technical_seo_score), 'Behind-the-scenes optimization'],
+            ['Mobile Experience', f'{r.ux_score}/100', self._get_status_text(r.ux_score), 'How well it works on phones'],
+            ['Links', f'{r.links_score}/100', self._get_status_text(r.links_score), 'Internal & external linking'],
+            ['Images', f'{r.images_score}/100', self._get_status_text(r.images_score), 'Image optimization'],
+            ['Security', f'{r.security_headers_score}/100', self._get_status_text(r.security_headers_score), 'Website security setup'],
+            ['Accessibility', f'{r.accessibility_score}/100', self._get_status_text(r.accessibility_score), 'Usability for all visitors'],
         ]
         
         cat_table = Table(categories_data, colWidths=[120, 70, 80, 180])
@@ -440,10 +599,21 @@ class SEOPDFReportGenerator:
         story.append(PageBreak())
         
         # ===== DETAILED FINDINGS =====
-        story.append(Paragraph("🔍 Detailed Findings", self.styles['SectionHeader']))
+        story.append(Paragraph('<font color="#6366f1"><b>DETAILED FINDINGS</b></font>', 
+                              ParagraphStyle('SectionHead3', fontSize=16, spaceAfter=10)))
         
         # Page Title & Description
-        story.append(Paragraph("📋 Page Title & Description", self.styles['SubHeader']))
+        title_header = Table([[Paragraph('<font color="white"><b>PAGE TITLE &amp; DESCRIPTION</b></font>', 
+                                        ParagraphStyle('BlueHeader', alignment=TA_LEFT, fontSize=11))]], 
+                            colWidths=[515])
+        title_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#3b82f6')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(title_header)
+        story.append(Spacer(1, 5))
         story.append(Paragraph(
             "Your page title and description appear in search results. They're like a mini-advertisement for your page.",
             self.styles['Explanation']
@@ -453,24 +623,26 @@ class SEOPDFReportGenerator:
         title_data = [
             ['Element', 'Your Value', 'Status'],
             ['Page Title', (r.title[:50] + '...' if r.title and len(r.title) > 50 else r.title) or 'Missing', 
-             '✅ Good' if r.title and 30 <= len(r.title) <= 60 else '⚠️ Needs Work'],
+             'Good' if r.title and 30 <= len(r.title) <= 60 else 'Needs Work'],
             ['Title Length', f'{r.title_length} characters', 
-             '✅ Good' if 30 <= r.title_length <= 60 else '⚠️ Adjust'],
+             'Good' if 30 <= r.title_length <= 60 else 'Adjust'],
             ['Page Description', (r.meta_description[:50] + '...' if r.meta_description and len(r.meta_description) > 50 else r.meta_description) or 'Missing',
-             '✅ Good' if r.meta_description and 120 <= len(r.meta_description) <= 160 else '⚠️ Needs Work'],
+             'Good' if r.meta_description and 120 <= len(r.meta_description) <= 160 else 'Needs Work'],
             ['Description Length', f'{r.meta_description_length} characters',
-             '✅ Good' if 120 <= r.meta_description_length <= 160 else '⚠️ Adjust'],
+             'Good' if 120 <= r.meta_description_length <= 160 else 'Adjust'],
         ]
         
         title_table = Table(title_data, colWidths=[120, 250, 100])
         title_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e293b')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('ALIGN', (2, 0), (2, -1), 'CENTER'),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
         ]))
         story.append(title_table)
         
@@ -483,7 +655,17 @@ class SEOPDFReportGenerator:
         story.append(Spacer(1, 20))
         
         # Content Analysis
-        story.append(Paragraph("📝 Content Analysis", self.styles['SubHeader']))
+        content_header = Table([[Paragraph('<font color="white"><b>CONTENT ANALYSIS</b></font>', 
+                                          ParagraphStyle('PurpleHeader', alignment=TA_LEFT, fontSize=11))]], 
+                              colWidths=[515])
+        content_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#8b5cf6')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(content_header)
+        story.append(Spacer(1, 5))
         story.append(Paragraph(
             "Search engines love helpful, well-written content. Here's how your content measures up.",
             self.styles['Explanation']
@@ -501,19 +683,31 @@ class SEOPDFReportGenerator:
         
         content_table = Table(content_data, colWidths=[120, 100, 250])
         content_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e293b')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
         ]))
         story.append(content_table)
         
         story.append(Spacer(1, 20))
         
         # Technical Checklist
-        story.append(Paragraph("⚙️ Technical Checklist", self.styles['SubHeader']))
+        tech_header = Table([[Paragraph('<font color="white"><b>TECHNICAL CHECKLIST</b></font>', 
+                                       ParagraphStyle('TealHeader', alignment=TA_LEFT, fontSize=11))]], 
+                           colWidths=[515])
+        tech_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#0d9488')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(tech_header)
+        story.append(Spacer(1, 5))
         story.append(Paragraph(
             "These technical elements help search engines understand and trust your website.",
             self.styles['Explanation']
@@ -522,30 +716,42 @@ class SEOPDFReportGenerator:
         
         tech_checks = [
             ['Check', 'Status', 'Why It Matters'],
-            ['Secure Connection (HTTPS)', '✅ Yes' if r.has_ssl else '❌ No', 'Required for trust & rankings'],
-            ['Mobile-Ready', '✅ Yes' if r.has_viewport else '❌ No', 'Most searches are on mobile'],
-            ['Page Language Set', '✅ Yes' if r.html_lang else '❌ No', 'Helps with language targeting'],
-            ['Favicon (Site Icon)', '✅ Yes' if r.has_favicon else '❌ No', 'Branding in browser tabs'],
-            ['Canonical URL', '✅ Yes' if r.canonical_url else '❌ No', 'Prevents duplicate content'],
-            ['Structured Data', '✅ Yes' if r.has_schema_markup else '❌ No', 'Enhanced search results'],
+            ['Secure Connection (HTTPS)', 'YES' if r.has_ssl else 'NO', 'Required for trust & rankings'],
+            ['Mobile-Ready', 'YES' if r.has_viewport else 'NO', 'Most searches are on mobile'],
+            ['Page Language Set', 'YES' if r.html_lang else 'NO', 'Helps with language targeting'],
+            ['Favicon (Site Icon)', 'YES' if r.has_favicon else 'NO', 'Branding in browser tabs'],
+            ['Canonical URL', 'YES' if r.canonical_url else 'NO', 'Prevents duplicate content'],
+            ['Structured Data', 'YES' if r.has_schema_markup else 'NO', 'Enhanced search results'],
         ]
         
         tech_table = Table(tech_checks, colWidths=[150, 80, 240])
         tech_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e293b')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('ALIGN', (1, 0), (1, -1), 'CENTER'),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
         ]))
         story.append(tech_table)
         
         story.append(PageBreak())
         
         # ===== ACTION PLAN =====
-        story.append(Paragraph("🎯 Your Action Plan", self.styles['SectionHeader']))
+        action_header = Table([[Paragraph('<font color="white"><b>YOUR ACTION PLAN</b></font>', 
+                                         ParagraphStyle('ActionHeader', alignment=TA_LEFT, fontSize=14))]], 
+                             colWidths=[515])
+        action_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#6366f1')),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('LEFTPADDING', (0, 0), (-1, -1), 15),
+        ]))
+        story.append(action_header)
+        story.append(Spacer(1, 5))
         story.append(Paragraph(
             "Here's what to focus on to improve your SEO, listed in order of importance.",
             self.styles['Explanation']
@@ -554,7 +760,17 @@ class SEOPDFReportGenerator:
         
         # Priority 1: Critical Issues
         if r.critical_issues:
-            story.append(Paragraph("🚨 Priority 1: Fix These First (Critical)", self.styles['SubHeader']))
+            critical_header = Table([[Paragraph('<font color="white"><b>PRIORITY 1: FIX THESE FIRST (CRITICAL)</b></font>', 
+                                               ParagraphStyle('CriticalHead', alignment=TA_LEFT, fontSize=10))]], 
+                                   colWidths=[515])
+            critical_header.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#dc2626')),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            story.append(critical_header)
+            story.append(Spacer(1, 3))
             story.append(Paragraph(
                 "These issues are likely hurting your search rankings right now.",
                 self.styles['Explanation']
@@ -570,7 +786,17 @@ class SEOPDFReportGenerator:
         
         # Priority 2: Warnings
         if r.warnings:
-            story.append(Paragraph("⚠️ Priority 2: Address Soon (Warnings)", self.styles['SubHeader']))
+            warning_header = Table([[Paragraph('<font color="white"><b>PRIORITY 2: ADDRESS SOON (WARNINGS)</b></font>', 
+                                              ParagraphStyle('WarningHead', alignment=TA_LEFT, fontSize=10))]], 
+                                  colWidths=[515])
+            warning_header.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f97316')),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            story.append(warning_header)
+            story.append(Spacer(1, 3))
             story.append(Paragraph(
                 "These could be affecting your visibility and should be fixed when possible.",
                 self.styles['Explanation']
@@ -586,7 +812,17 @@ class SEOPDFReportGenerator:
         
         # Priority 3: Recommendations
         if r.recommendations:
-            story.append(Paragraph("💡 Priority 3: Nice to Have (Suggestions)", self.styles['SubHeader']))
+            rec_header = Table([[Paragraph('<font color="white"><b>PRIORITY 3: NICE TO HAVE (SUGGESTIONS)</b></font>', 
+                                          ParagraphStyle('RecHead', alignment=TA_LEFT, fontSize=10))]], 
+                              colWidths=[515])
+            rec_header.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#22c55e')),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            story.append(rec_header)
+            story.append(Spacer(1, 3))
             story.append(Paragraph(
                 "These are optimizations that can give you an extra edge over competitors.",
                 self.styles['Explanation']
@@ -602,7 +838,17 @@ class SEOPDFReportGenerator:
         story.append(PageBreak())
         
         # ===== GLOSSARY =====
-        story.append(Paragraph("📚 SEO Glossary", self.styles['SectionHeader']))
+        glossary_header = Table([[Paragraph('<font color="white"><b>SEO GLOSSARY</b></font>', 
+                                           ParagraphStyle('GlossaryHead', alignment=TA_LEFT, fontSize=14))]], 
+                               colWidths=[515])
+        glossary_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#1e293b')),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('LEFTPADDING', (0, 0), (-1, -1), 15),
+        ]))
+        story.append(glossary_header)
+        story.append(Spacer(1, 5))
         story.append(Paragraph(
             "Common SEO terms explained in plain English.",
             self.styles['Explanation']
@@ -665,13 +911,13 @@ class SEOPDFReportGenerator:
     def _get_status_text(self, score):
         """Get status text based on score"""
         if score >= 80:
-            return '✅ Great'
+            return 'GREAT'
         elif score >= 60:
-            return '⚠️ Good'
+            return 'GOOD'
         elif score >= 40:
-            return '⚠️ Fair'
+            return 'FAIR'
         else:
-            return '❌ Needs Work'
+            return 'NEEDS WORK'
     
     def save_pdf(self, filepath):
         """Save PDF to file"""
