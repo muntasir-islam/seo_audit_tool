@@ -1222,51 +1222,91 @@ def main():
         normalized_input_url = normalize_url(url)
         
         # Always run a fresh audit when button is clicked
-        with st.spinner("Analyzing 300+ SEO parameters... This may take 10-20 seconds."):
-            progress = st.progress(0)
-            status = st.empty()
+        progress = st.progress(0)
+        status = st.empty()
+        debug_container = st.container()
+        
+        try:
+            status.text("Initializing audit...")
+            progress.progress(10)
+            
+            # Create a fresh auditor instance for each audit
+            auditor = AdvancedSEOAuditor(url, target_keyword=keyword if keyword else None)
+            
+            status.text(f"Fetching {auditor.url}...")
+            progress.progress(20)
+            
+            # Show debug info during fetch
+            with debug_container:
+                st.info(f"🔍 Attempting to fetch: **{auditor.url}**")
+            
+            # Perform the fetch manually first to show progress
+            import requests as req
+            from bs4 import BeautifulSoup as BS
+            
+            fetch_headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+            }
             
             try:
-                status.text("Initializing audit...")
-                progress.progress(10)
+                response = req.get(auditor.url, headers=fetch_headers, timeout=30, allow_redirects=True)
+                with debug_container:
+                    st.success(f"✅ HTTP Status: **{response.status_code}** | Content: **{len(response.text):,}** chars")
                 
-                # Create a fresh auditor instance for each audit
-                auditor = AdvancedSEOAuditor(url, target_keyword=keyword if keyword else None)
-                
-                status.text(f"Fetching and analyzing {auditor.url}...")
-                progress.progress(30)
-                
-                # Run the full audit
-                result = auditor.run_audit()
-                
-                progress.progress(90)
-                
-                if result:
-                    # Show debug info about what was found
-                    status.text(f"Found: {result.title[:40] if result.title else 'No title'}...")
+                if response.status_code == 200:
+                    soup = BS(response.text, 'html.parser')
+                    title_tag = soup.find('title')
+                    meta_desc = soup.find('meta', attrs={'name': 'description'})
+                    
+                    with debug_container:
+                        st.write(f"📄 **Title:** {title_tag.get_text().strip()[:80] if title_tag else 'NOT FOUND'}")
+                        st.write(f"📝 **Meta Desc:** {meta_desc.get('content', '')[:100] if meta_desc else 'NOT FOUND'}...")
+                    
+                    status.text("Running full audit analysis...")
+                    progress.progress(50)
+                    
+                    # Now run the full audit
+                    result = auditor.run_audit()
+                    
                     progress.progress(100)
                     status.empty()
                     
-                    # Store in session state to persist across reruns
-                    st.session_state.audit_result = result
-                    st.session_state.audited_url = normalized_input_url
-                    
-                    # Show the URL and score for verification
-                    st.toast(f"✅ Score: {result.score} | {result.url}")
-                    st.rerun()  # Rerun to display results cleanly
-                else:
-                    progress.progress(100)
-                    status.empty()
-                    st.error(f"Failed to audit: {auditor.url}")
-                    st.info("**Possible reasons:**\n- Website blocks automated requests\n- URL is unreachable\n- Network/firewall issues\n- Try a different URL")
+                    if result:
+                        with debug_container:
+                            st.success(f"✅ Audit Complete! Score: **{result.score}** | Grade: **{result.grade}**")
                         
-            except Exception as e:
-                progress.progress(100)
-                status.empty()
-                st.error(f"Error during audit: {str(e)}")
-                import traceback
-                with st.expander("Error Details"):
-                    st.code(traceback.format_exc())
+                        # Store in session state to persist across reruns
+                        st.session_state.audit_result = result
+                        st.session_state.audited_url = normalized_input_url
+                        
+                        time.sleep(1)  # Let user see the debug info
+                        st.rerun()  # Rerun to display results cleanly
+                    else:
+                        with debug_container:
+                            st.error("Audit returned None - fetch might have failed inside the auditor")
+                else:
+                    with debug_container:
+                        st.error(f"HTTP Error: {response.status_code}")
+                        
+            except req.exceptions.Timeout:
+                with debug_container:
+                    st.error("⏱️ Request timed out after 30 seconds")
+            except req.exceptions.ConnectionError as ce:
+                with debug_container:
+                    st.error(f"🔌 Connection error: {ce}")
+            except req.exceptions.RequestException as re:
+                with debug_container:
+                    st.error(f"❌ Request failed: {re}")
+                        
+        except Exception as e:
+            progress.progress(100)
+            status.empty()
+            st.error(f"Error during audit: {str(e)}")
+            import traceback
+            with st.expander("Error Details"):
+                st.code(traceback.format_exc())
     
     elif audit_button and not url:
         st.warning("Please enter a URL to audit")
