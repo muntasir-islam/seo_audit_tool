@@ -656,7 +656,16 @@ def display_technical(result):
         st.markdown("**Schema Markup**")
         st.write(f"{'[+]' if result.has_schema_markup else '[-]'} Schema.org: {result.schema_count} schemas")
         if result.schema_types:
-            st.caption(f"Types: {', '.join(result.schema_types[:5])}")
+            # Flatten and stringify schema types to avoid non-string items
+            flat_types = []
+            for item in result.schema_types:
+                if isinstance(item, list):
+                    flat_types.extend(item)
+                else:
+                    flat_types.append(item)
+            safe_types = [str(t) for t in flat_types if t]
+            if safe_types:
+                st.caption(f"Types: {', '.join(safe_types[:5])}")
         st.write(f"Microdata: {result.microdata_items}")
         st.write(f"RDFa: {result.rdfa_items}")
     
