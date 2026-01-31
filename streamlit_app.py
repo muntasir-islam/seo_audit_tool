@@ -21,18 +21,19 @@ import pandas as pd
 # Page config - MUST be first Streamlit command
 st.set_page_config(
     page_title="SEO Audit Tool - 300+ Checks | Free Online SEO Analyzer",
-    page_icon="🔍",
+    page_icon="https://api.iconify.design/carbon/search-advanced.svg",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://github.com/muntasir-islam/seo_audit_tool',
         'Report a bug': 'https://github.com/muntasir-islam/seo_audit_tool/issues',
-        'About': '### 🔍 Advanced SEO Audit Tool\n\n**300+ SEO parameters analyzed**\n\nCreated by Muntasir Islam'
+        'About': '### Advanced SEO Audit Tool\n\n**300+ SEO parameters analyzed**\n\nCreated by Muntasir Islam'
     }
 )
 
-# Custom CSS
+# Font Awesome CDN and Custom CSS
 st.markdown("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
     .main { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%); }
     .stApp { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%); }
@@ -52,6 +53,19 @@ st.markdown("""
     .status-good { color: #22c55e; }
     .status-warning { color: #eab308; }
     .status-bad { color: #ef4444; }
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 20px 0 15px 0;
+        color: #e2e8f0;
+    }
+    .section-header i {
+        color: #6366f1;
+        width: 24px;
+    }
     .issue-critical {
         background: rgba(239, 68, 68, 0.1);
         border-left: 4px solid #ef4444;
@@ -100,6 +114,10 @@ st.markdown("""
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 10px;
     }
+    .status-icon { font-size: 0.9rem; margin-right: 4px; }
+    .pass-icon { color: #22c55e; }
+    .fail-icon { color: #ef4444; }
+    .warn-icon { color: #eab308; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -113,15 +131,15 @@ def display_score_card(result):
     if result.score >= 80:
         score_color = "#22c55e"
         score_label = "Excellent"
-        grade_emoji = "🏆"
+        grade_icon = "fa-solid fa-trophy"
     elif result.score >= 60:
         score_color = "#eab308"
         score_label = "Needs Improvement"
-        grade_emoji = "📈"
+        grade_icon = "fa-solid fa-chart-line"
     else:
         score_color = "#ef4444"
         score_label = "Poor"
-        grade_emoji = "⚠️"
+        grade_icon = "fa-solid fa-triangle-exclamation"
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -133,7 +151,7 @@ def display_score_card(result):
                 <span style="font-size: 3.5rem; font-weight: bold; color: {score_color};">{result.score}</span>
                 <span style="font-size: 1.2rem; color: {score_color};">Grade: {result.grade}</span>
             </div>
-            <p style="font-size: 1.5rem; color: {score_color}; font-weight: 600;">{grade_emoji} {score_label}</p>
+            <p style="font-size: 1.5rem; color: {score_color}; font-weight: 600;"><i class="{grade_icon}"></i> {score_label}</p>
             <p style="color: #94a3b8; margin-top: 10px;">Audited: {result.audit_date}</p>
             <p style="color: #64748b; font-size: 0.9rem;">300+ Parameters Analyzed</p>
         </div>
@@ -145,18 +163,18 @@ def display_quick_stats(result):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("✅ Passed", result.checks_passed, delta="checks")
+        st.metric("Passed", result.checks_passed, delta="checks")
     with col2:
-        st.metric("⚠️ Warnings", result.checks_warnings, delta="issues", delta_color="off")
+        st.metric("Warnings", result.checks_warnings, delta="issues", delta_color="off")
     with col3:
-        st.metric("❌ Critical", result.checks_failed, delta="issues", delta_color="inverse")
+        st.metric("Critical", result.checks_failed, delta="issues", delta_color="inverse")
     with col4:
-        st.metric("⏱️ Response", f"{result.response_time:.2f}s", delta=f"{result.page_size_kb}KB")
+        st.metric("Response", f"{result.response_time:.2f}s", delta=f"{result.page_size_kb}KB")
 
 
 def display_meta_tags(result):
     """Display meta tags analysis"""
-    st.markdown("### 📋 Meta Tags Analysis")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-tags"></i> Meta Tags Analysis</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -168,9 +186,9 @@ def display_meta_tags(result):
         tcol1, tcol2, tcol3 = st.columns(3)
         tcol1.metric("Length", f"{result.title_length}ch")
         tcol2.metric("Pixel Width", f"~{result.title_pixel_width}px")
-        tcol3.metric("Has Numbers", "✅" if result.title_has_numbers else "❌")
+        tcol3.metric("Has Numbers", "Yes" if result.title_has_numbers else "No")
         
-        st.caption(f"Power Words: {'✅' if result.title_has_power_words else '❌'} | Keyword: {'✅' if result.title_has_keyword else '❌'}")
+        st.caption(f"Power Words: {'Yes' if result.title_has_power_words else 'No'} | Keyword: {'Yes' if result.title_has_keyword else 'No'}")
     
     with col2:
         st.markdown("**Meta Description**")
@@ -179,19 +197,19 @@ def display_meta_tags(result):
         
         dcol1, dcol2, dcol3 = st.columns(3)
         dcol1.metric("Length", f"{result.meta_description_length}ch")
-        dcol2.metric("Has CTA", "✅" if result.meta_description_has_cta else "❌")
-        dcol3.metric("Keyword", "✅" if result.meta_description_has_keyword else "❌")
+        dcol2.metric("Has CTA", "Yes" if result.meta_description_has_cta else "No")
+        dcol3.metric("Keyword", "Yes" if result.meta_description_has_keyword else "No")
     
     st.markdown("---")
     
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("**Canonical URL**")
-        st.text(result.canonical_url[:50] + "..." if result.canonical_url and len(result.canonical_url) > 50 else result.canonical_url or "⚠️ Missing")
+        st.text(result.canonical_url[:50] + "..." if result.canonical_url and len(result.canonical_url) > 50 else result.canonical_url or "Missing")
     with col2:
         st.markdown("**Robots Meta**")
         st.text(result.robots_meta or "Not specified")
-        st.caption(f"Index: {'✅' if result.robots_index else '❌'} | Follow: {'✅' if result.robots_follow else '❌'}")
+        st.caption(f"Index: {'Yes' if result.robots_index else 'No'} | Follow: {'Yes' if result.robots_follow else 'No'}")
     with col3:
         st.markdown("**Meta Keywords**")
         st.text(f"{result.meta_keywords_count} keywords" if result.meta_keywords else "Not set")
@@ -199,7 +217,7 @@ def display_meta_tags(result):
 
 def display_social_tags(result):
     """Display social media tags"""
-    st.markdown("### 🌐 Social Media Tags")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-share-nodes"></i> Social Media Tags</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -214,7 +232,7 @@ def display_social_tags(result):
             ("Site Name", result.og_site_name),
         ]
         for name, value in og_items:
-            status = "✅" if value else "❌"
+            status = "[+]" if value else "[-]"
             st.text(f"{status} {name}: {(value[:40] + '...' if value and len(str(value)) > 40 else value) or 'Missing'}")
     
     with col2:
@@ -228,13 +246,13 @@ def display_social_tags(result):
             ("Creator", result.twitter_creator),
         ]
         for name, value in twitter_items:
-            status = "✅" if value else "❌"
+            status = "[+]" if value else "[-]"
             st.text(f"{status} {name}: {(value[:40] + '...' if value and len(str(value)) > 40 else value) or 'Missing'}")
 
 
 def display_headings(result):
     """Display headings analysis"""
-    st.markdown("### 📝 Heading Structure")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-heading"></i> Heading Structure</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     col1.metric("H1", result.h1_count, delta=result.heading_structure_status)
@@ -246,24 +264,24 @@ def display_headings(result):
     
     mcol1, mcol2, mcol3, mcol4 = st.columns(4)
     mcol1.metric("Total", result.total_headings)
-    mcol2.metric("Hierarchy", "✅ Valid" if result.heading_hierarchy_valid else "❌ Invalid")
+    mcol2.metric("Hierarchy", "Valid" if result.heading_hierarchy_valid else "Invalid")
     mcol3.metric("Empty", result.empty_headings)
     mcol4.metric("Duplicates", result.duplicate_headings)
     
     if result.h1_tags:
         with st.expander(f"View H1 Tags ({len(result.h1_tags)})"):
             for h1 in result.h1_tags:
-                st.write(f"• {h1}")
+                st.write(f"- {h1}")
     
     if result.h2_tags:
         with st.expander(f"View H2 Tags ({len(result.h2_tags)})"):
             for h2 in result.h2_tags[:10]:
-                st.write(f"• {h2}")
+                st.write(f"- {h2}")
 
 
 def display_images(result):
     """Display images analysis"""
-    st.markdown("### 🖼️ Images Analysis")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-images"></i> Images Analysis</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Images", result.total_images)
@@ -289,7 +307,7 @@ def display_images(result):
 
 def display_links(result):
     """Display links analysis"""
-    st.markdown("### 🔗 Links Analysis")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-link"></i> Links Analysis</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Links", result.total_links)
@@ -312,12 +330,12 @@ def display_links(result):
     col4.metric("JS Links", result.javascript_links)
     
     if result.links_without_noopener > 0:
-        st.warning(f"⚠️ {result.links_without_noopener} links with target='_blank' missing rel='noopener' (security issue)")
+        st.warning(f"{result.links_without_noopener} links with target='_blank' missing rel='noopener' (security issue)")
 
 
 def display_technical(result):
     """Display technical SEO"""
-    st.markdown("### ⚙️ Technical SEO")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-gears"></i> Technical SEO</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
@@ -331,7 +349,7 @@ def display_technical(result):
             ("Doctype", result.has_doctype),
         ]
         for name, value in items:
-            st.write(f"{'✅' if value else '❌'} {name}")
+            st.write(f"{'[+]' if value else '[-]'} {name}")
     
     with col2:
         st.markdown("**Branding & PWA**")
@@ -342,11 +360,11 @@ def display_technical(result):
             ("Theme Color", result.has_theme_color),
         ]
         for name, value in items:
-            st.write(f"{'✅' if value else '❌'} {name}")
+            st.write(f"{'[+]' if value else '[-]'} {name}")
     
     with col3:
         st.markdown("**Schema Markup**")
-        st.write(f"{'✅' if result.has_schema_markup else '❌'} Schema.org: {result.schema_count} schemas")
+        st.write(f"{'[+]' if result.has_schema_markup else '[-]'} Schema.org: {result.schema_count} schemas")
         if result.schema_types:
             st.caption(f"Types: {', '.join(result.schema_types[:5])}")
         st.write(f"Microdata: {result.microdata_items}")
@@ -375,8 +393,8 @@ def display_technical(result):
     with col1:
         st.write(f"HTTP Status: {result.http_status}")
         st.write(f"Server: {result.server or 'Not disclosed'}")
-        st.write(f"Gzip: {'✅' if result.has_gzip else '❌'} ({result.content_encoding or 'None'})")
-        st.write(f"Cache Headers: {'✅' if result.has_cache_headers else '❌'}")
+        st.write(f"Gzip: {'Yes' if result.has_gzip else 'No'} ({result.content_encoding or 'None'})")
+        st.write(f"Cache Headers: {'Yes' if result.has_cache_headers else 'No'}")
     
     with col2:
         st.metric("Security Score", f"{result.security_headers_score}%")
@@ -388,12 +406,12 @@ def display_technical(result):
             ("CSP", result.has_csp),
         ]
         for name, value in security_items:
-            st.write(f"{'✅' if value else '❌'} {name}")
+            st.write(f"{'[+]' if value else '[-]'} {name}")
 
 
 def display_content(result):
     """Display content analysis"""
-    st.markdown("### 📖 Content Analysis")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-file-lines"></i> Content Analysis</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Words", result.word_count)
@@ -434,43 +452,43 @@ def display_content(result):
 
 def display_mobile_ux(result):
     """Display mobile & UX"""
-    st.markdown("### 📱 Mobile & UX")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-mobile-screen"></i> Mobile & UX</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Mobile Friendly", "✅ Yes" if result.is_mobile_friendly else "❌ No")
-    col2.metric("AMP Version", "✅ Yes" if result.has_amp_version else "❌ No")
+    col1.metric("Mobile Friendly", "Yes" if result.is_mobile_friendly else "No")
+    col2.metric("AMP Version", "Yes" if result.has_amp_version else "No")
     col3.metric("Touch Icons", result.touch_icons_count)
     col4.metric("UX Score", f"{result.ux_score}/100")
 
 
 def display_i18n(result):
     """Display internationalization"""
-    st.markdown("### 🌍 Internationalization")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-globe"></i> Internationalization</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Hreflang Tags", result.hreflang_count)
-    col2.metric("X-Default", "✅" if result.has_x_default else "❌")
+    col2.metric("X-Default", "Yes" if result.has_x_default else "No")
     col3.metric("HTML Lang", result.detected_language or "Not set")
     col4.metric("Score", f"{result.i18n_score}/100")
 
 
 def display_ecommerce(result):
     """Display e-commerce & rich snippets"""
-    st.markdown("### 🏪 E-Commerce & Rich Snippets")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-store"></i> E-Commerce & Rich Snippets</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("**Product Schema**")
-        st.write(f"{'✅' if result.has_product_schema else '❌'} Product Schema")
+        st.write(f"{'[+]' if result.has_product_schema else '[-]'} Product Schema")
         if result.has_product_schema:
             st.caption(f"Name: {result.product_name}")
             st.caption(f"Price: {result.product_price} {result.product_currency}")
     
     with col2:
         st.markdown("**Navigation**")
-        st.write(f"{'✅' if result.has_breadcrumbs else '❌'} Breadcrumbs ({result.breadcrumb_levels} levels)")
-        st.write(f"{'✅' if result.has_breadcrumb_schema else '❌'} Breadcrumb Schema")
+        st.write(f"{'[+]' if result.has_breadcrumbs else '[-]'} Breadcrumbs ({result.breadcrumb_levels} levels)")
+        st.write(f"{'[+]' if result.has_breadcrumb_schema else '[-]'} Breadcrumb Schema")
     
     with col3:
         st.markdown("**Rich Snippets**")
@@ -484,12 +502,12 @@ def display_ecommerce(result):
         ]
         for name, has_it, count in items:
             extra = f" ({count} items)" if count else ""
-            st.write(f"{'✅' if has_it else '❌'} {name}{extra}")
+            st.write(f"{'[+]' if has_it else '[-]'} {name}{extra}")
 
 
 def display_accessibility(result):
     """Display accessibility"""
-    st.markdown("### ♿ Accessibility")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-universal-access"></i> Accessibility</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Score", f"{result.accessibility_score}/100")
@@ -499,78 +517,78 @@ def display_accessibility(result):
     
     st.markdown("**Landmarks**")
     col1, col2, col3, col4 = st.columns(4)
-    col1.write(f"{'✅' if result.has_skip_link else '❌'} Skip Link")
-    col2.write(f"{'✅' if result.has_main_landmark else '❌'} Main")
-    col3.write(f"{'✅' if result.has_nav_landmark else '❌'} Navigation")
-    col4.write(f"{'✅' if result.has_footer_landmark else '❌'} Footer")
+    col1.write(f"{'[+]' if result.has_skip_link else '[-]'} Skip Link")
+    col2.write(f"{'[+]' if result.has_main_landmark else '[-]'} Main")
+    col3.write(f"{'[+]' if result.has_nav_landmark else '[-]'} Navigation")
+    col4.write(f"{'[+]' if result.has_footer_landmark else '[-]'} Footer")
 
 
 def display_performance(result):
     """Display performance hints"""
-    st.markdown("### ⚡ Performance Hints")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-bolt"></i> Performance Hints</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Score", f"{result.performance_hints_score}/100")
-    col2.write(f"{'✅' if result.has_preload else '❌'} Preload")
-    col3.write(f"{'✅' if result.has_preconnect else '❌'} Preconnect")
-    col4.write(f"{'✅' if result.has_dns_prefetch else '❌'} DNS Prefetch")
+    col2.write(f"{'[+]' if result.has_preload else '[-]'} Preload")
+    col3.write(f"{'[+]' if result.has_preconnect else '[-]'} Preconnect")
+    col4.write(f"{'[+]' if result.has_dns_prefetch else '[-]'} DNS Prefetch")
     
     if result.preconnect_domains:
         with st.expander("Preconnect Domains"):
             for domain in result.preconnect_domains[:5]:
-                st.write(f"• {domain}")
+                st.write(f"- {domain}")
 
 
 def display_issues(result):
     """Display all issues"""
-    st.markdown("### 🚨 Issues & Recommendations")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-clipboard-list"></i> Issues & Recommendations</div>', unsafe_allow_html=True)
     
     tab1, tab2, tab3, tab4 = st.tabs([
-        f"❌ Critical ({len(result.critical_issues)})",
-        f"⚠️ Warnings ({len(result.warnings)})",
-        f"💡 Recommendations ({len(result.recommendations)})",
-        f"✅ Passed ({len(result.passed_checks)})"
+        f"Critical ({len(result.critical_issues)})",
+        f"Warnings ({len(result.warnings)})",
+        f"Recommendations ({len(result.recommendations)})",
+        f"Passed ({len(result.passed_checks)})"
     ])
     
     with tab1:
         if result.critical_issues:
             for issue in result.critical_issues:
-                st.markdown(f'<div class="issue-critical">❌ {issue}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="issue-critical"><i class="fa-solid fa-xmark" style="color:#ef4444;"></i> {issue}</div>', unsafe_allow_html=True)
         else:
-            st.success("No critical issues found! 🎉")
+            st.success("No critical issues found.")
     
     with tab2:
         if result.warnings:
             for warning in result.warnings:
-                st.markdown(f'<div class="issue-warning">⚠️ {warning}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="issue-warning"><i class="fa-solid fa-triangle-exclamation" style="color:#eab308;"></i> {warning}</div>', unsafe_allow_html=True)
         else:
-            st.success("No warnings! 🎉")
+            st.success("No warnings detected.")
     
     with tab3:
         if result.recommendations:
             for rec in result.recommendations:
-                st.markdown(f'<div class="issue-recommendation">💡 {rec}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="issue-recommendation"><i class="fa-solid fa-lightbulb" style="color:#3b82f6;"></i> {rec}</div>', unsafe_allow_html=True)
         else:
             st.info("No additional recommendations.")
     
     with tab4:
         if result.passed_checks:
             for check in result.passed_checks:
-                st.markdown(f'<div class="issue-passed">✅ {check}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="issue-passed"><i class="fa-solid fa-check" style="color:#22c55e;"></i> {check}</div>', unsafe_allow_html=True)
 
 
 def display_export(result):
     """Display export options"""
-    st.markdown("### 📥 Export Report")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-download"></i> Export Report</div>', unsafe_allow_html=True)
     
-    st.markdown("**📑 Professional PDF Report (Recommended)**")
+    st.markdown("**Professional PDF Report (Recommended)**")
     st.caption("Easy-to-understand report perfect for sharing with clients or team members")
     
     try:
         from pdf_report_generator import generate_pdf_report
         pdf_buffer = generate_pdf_report(result)
         st.download_button(
-            label="📑 Download PDF Report (Easy to Read)",
+            label="Download PDF Report",
             data=pdf_buffer,
             file_name=f"seo_report_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.pdf",
             mime="application/pdf",
@@ -590,7 +608,7 @@ def display_export(result):
     with col1:
         json_data = json.dumps(asdict(result), indent=2, default=str)
         st.download_button(
-            label="📄 Download JSON",
+            label="Download JSON",
             data=json_data,
             file_name=f"seo_audit_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.json",
             mime="application/json",
@@ -601,7 +619,7 @@ def display_export(result):
         # Generate text report
         text_report = print_audit_report(result)
         st.download_button(
-            label="📝 Download Text Report",
+            label="Download Text Report",
             data=text_report,
             file_name=f"seo_audit_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.txt",
             mime="text/plain",
@@ -618,7 +636,7 @@ def display_export(result):
         df = pd.DataFrame(summary_data)
         csv = df.to_csv(index=False)
         st.download_button(
-            label="📊 Download CSV Summary",
+            label="Download CSV Summary",
             data=csv,
             file_name=f"seo_summary_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
@@ -628,51 +646,51 @@ def display_export(result):
 
 def display_crawling_indexing(result):
     """Display crawling & indexing analysis"""
-    st.markdown("### 📈 Crawling & Indexing")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-robot"></i> Crawling & Indexing</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Score", f"{result.crawling_score}/100")
-    col2.metric("Indexable", "✅ Yes" if result.is_indexable else "❌ No")
+    col2.metric("Indexable", "Yes" if result.is_indexable else "No")
     col3.metric("URL Depth", result.url_depth)
     col4.metric("URL Length", f"{result.url_length} chars")
     
     st.markdown("**URL Analysis**")
     col1, col2, col3, col4 = st.columns(4)
-    col1.write(f"{'✅' if result.url_structure_friendly else '❌'} SEO-Friendly URL")
-    col2.write(f"{'✅' if not result.url_has_parameters else '⚠️'} {'No' if not result.url_has_parameters else 'Has'} Query Params")
-    col3.write(f"{'✅' if not result.url_has_underscores else '⚠️'} {'No' if not result.url_has_underscores else 'Has'} Underscores")
-    col4.write(f"{'✅' if result.url_length <= 75 else '⚠️'} URL Length {'OK' if result.url_length <= 75 else 'Long'}")
+    col1.write(f"{'[+]' if result.url_structure_friendly else '[-]'} SEO-Friendly URL")
+    col2.write(f"{'[+]' if not result.url_has_parameters else '[!]'} {'No' if not result.url_has_parameters else 'Has'} Query Params")
+    col3.write(f"{'[+]' if not result.url_has_underscores else '[!]'} {'No' if not result.url_has_underscores else 'Has'} Underscores")
+    col4.write(f"{'[+]' if result.url_length <= 75 else '[!]'} URL Length {'OK' if result.url_length <= 75 else 'Long'}")
     
     st.markdown("**Indexability Signals**")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.write(f"{'❌ Blocked' if result.robots_txt_blocks_url else '✅ Allowed'} by robots.txt")
+        st.write(f"{'[-] Blocked' if result.robots_txt_blocks_url else '[+] Allowed'} by robots.txt")
         st.write(f"X-Robots-Tag: {result.x_robots_tag or 'Not set'}")
     with col2:
-        st.write(f"{'⚠️ Redirect Chain' if result.has_redirect_chain else '✅ No'} Redirect Chain")
+        st.write(f"{'[!] Redirect Chain' if result.has_redirect_chain else '[+] No'} Redirect Chain")
         if result.has_redirect_chain:
             st.caption(f"Chain length: {result.redirect_chain_length}")
     with col3:
-        st.write(f"{'❌' if result.has_5xx_error else '✅'} {'5xx Error' if result.has_5xx_error else 'No Server Errors'}")
-        st.write(f"{'✅' if result.has_noindex_system_pages else '⚠️'} System Pages Noindexed")
+        st.write(f"{'[-]' if result.has_5xx_error else '[+]'} {'5xx Error' if result.has_5xx_error else 'No Server Errors'}")
+        st.write(f"{'[+]' if result.has_noindex_system_pages else '[!]'} System Pages Noindexed")
 
 
 def display_content_quality(result):
     """Display content quality analysis"""
-    st.markdown("### ✍️ Content Quality & E-E-A-T")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-pen-fancy"></i> Content Quality & E-E-A-T</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Score", f"{result.content_quality_score}/100")
-    col2.metric("Thin Content", "❌ Yes" if result.has_thin_content else "✅ No")
-    col3.metric("Unique Content", "✅ Yes" if result.content_is_unique else "⚠️ Check")
-    col4.metric("E-E-A-T Signals", "✅ Yes" if result.has_eeat_signals else "⚠️ Missing")
+    col2.metric("Thin Content", "Yes" if result.has_thin_content else "No")
+    col3.metric("Unique Content", "Yes" if result.content_is_unique else "Check")
+    col4.metric("E-E-A-T Signals", "Yes" if result.has_eeat_signals else "Missing")
     
     st.markdown("**Trust & Authority Signals**")
     col1, col2, col3, col4 = st.columns(4)
-    col1.write(f"{'✅' if result.has_privacy_policy else '❌'} Privacy Policy")
-    col2.write(f"{'✅' if result.has_contact_page else '❌'} Contact Page")
-    col3.write(f"{'✅' if result.has_about_page else '❌'} About Page")
-    col4.write(f"{'✅' if result.has_author_info else '❌'} Author Info")
+    col1.write(f"{'[+]' if result.has_privacy_policy else '[-]'} Privacy Policy")
+    col2.write(f"{'[+]' if result.has_contact_page else '[-]'} Contact Page")
+    col3.write(f"{'[+]' if result.has_about_page else '[-]'} About Page")
+    col4.write(f"{'[+]' if result.has_author_info else '[-]'} Author Info")
     
     if result.author_name:
         st.caption(f"Author: {result.author_name}")
@@ -684,20 +702,20 @@ def display_content_quality(result):
     
     st.markdown("**Content Issues**")
     col1, col2, col3, col4 = st.columns(4)
-    col1.write(f"{'❌ Found' if result.has_hidden_text else '✅ None'} Hidden Text")
-    col2.write(f"{'❌ Heavy' if result.has_heavy_above_fold_ads else '✅ OK'} Above-Fold Ads")
-    col3.write(f"{'❌ Found' if result.content_in_iframes else '✅ None'} Content in iFrames")
-    col4.write(f"{'❌ Found' if result.has_intrusive_interstitials else '✅ None'} Intrusive Popups")
+    col1.write(f"{'[-] Found' if result.has_hidden_text else '[+] None'} Hidden Text")
+    col2.write(f"{'[-] Heavy' if result.has_heavy_above_fold_ads else '[+] OK'} Above-Fold Ads")
+    col3.write(f"{'[-] Found' if result.content_in_iframes else '[+] None'} Content in iFrames")
+    col4.write(f"{'[-] Found' if result.has_intrusive_interstitials else '[+] None'} Intrusive Popups")
     
     st.markdown("**Content Best Practices**")
     col1, col2 = st.columns(2)
-    col1.write(f"{'✅' if result.has_clear_cta else '⚠️'} Clear Call-to-Action")
-    col2.write(f"{'✅' if result.uses_semantic_html else '⚠️'} Semantic HTML")
+    col1.write(f"{'[+]' if result.has_clear_cta else '[!]'} Clear Call-to-Action")
+    col2.write(f"{'[+]' if result.uses_semantic_html else '[!]'} Semantic HTML")
 
 
 def display_keyword_analysis(result):
     """Display keyword optimization analysis"""
-    st.markdown("### 🗝️ Keyword Analysis")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-key"></i> Keyword Analysis</div>', unsafe_allow_html=True)
     
     if result.target_keyword:
         col1, col2, col3, col4 = st.columns(4)
@@ -710,120 +728,121 @@ def display_keyword_analysis(result):
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.write(f"{'✅' if result.keyword_in_title else '❌'} In Title Tag")
+            st.write(f"{'[+]' if result.keyword_in_title else '[-]'} In Title Tag")
             if result.keyword_in_title:
                 pos_text = "Front" if result.keyword_in_title_position == 1 else "Middle/End"
                 st.caption(f"Position: {pos_text}")
-            st.write(f"{'✅' if result.title_starts_with_keyword else '⚠️'} Title Starts with Keyword")
+            st.write(f"{'[+]' if result.title_starts_with_keyword else '[!]'} Title Starts with Keyword")
         
         with col2:
-            st.write(f"{'✅' if result.keyword_in_meta_desc else '❌'} In Meta Description")
-            st.write(f"{'✅' if result.keyword_in_h1 else '❌'} In H1 Tag")
+            st.write(f"{'[+]' if result.keyword_in_meta_desc else '[-]'} In Meta Description")
+            st.write(f"{'[+]' if result.keyword_in_h1 else '[-]'} In H1 Tag")
         
         with col3:
-            st.write(f"{'✅' if result.keyword_in_h2 else '❌'} In H2 Tags")
-            st.write(f"{'✅' if result.keyword_in_first_paragraph else '❌'} In First 100 Words")
+            st.write(f"{'[+]' if result.keyword_in_h2 else '[-]'} In H2 Tags")
+            st.write(f"{'[+]' if result.keyword_in_first_paragraph else '[-]'} In First 100 Words")
         
         st.markdown("**Keyword Usage**")
         if result.keyword_overuse:
-            st.warning("⚠️ Keyword may be overused (density > 3%). Consider reducing for natural content.")
+            st.warning("Keyword may be overused (density > 3%). Consider reducing for natural content.")
         elif result.keyword_density_percent < 0.5:
-            st.info("💡 Consider using keyword more naturally in content (current density < 0.5%)")
+            st.info("Consider using keyword more naturally in content (current density < 0.5%)")
         else:
-            st.success("✅ Keyword density appears optimal (0.5-3%)")
+            st.success("Keyword density appears optimal (0.5-3%)")
     else:
-        st.info("💡 Enter a target keyword when running the audit to see keyword optimization analysis")
+        st.info("Enter a target keyword when running the audit to see keyword optimization analysis")
 
 
 def display_mobile_advanced(result):
     """Display advanced mobile analysis"""
-    st.markdown("### 📱 Advanced Mobile Optimization")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-mobile-retro"></i> Advanced Mobile Optimization</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Score", f"{result.mobile_advanced_score}/100")
     col2.metric("Page Weight", f"{result.mobile_page_weight_kb:.0f} KB")
-    col3.metric("Heavy Page", "❌ Yes" if result.mobile_page_heavy else "✅ No")
-    col4.metric("Mobile Friendly", "✅ Yes" if result.is_mobile_friendly else "❌ No")
+    col3.metric("Heavy Page", "Yes" if result.mobile_page_heavy else "No")
+    col4.metric("Mobile Friendly", "Yes" if result.is_mobile_friendly else "No")
     
     st.markdown("**Mobile Usability**")
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.write(f"{'✅' if result.tap_targets_sized_correctly else '❌'} Tap Targets Sized")
+        st.write(f"{'[+]' if result.tap_targets_sized_correctly else '[-]'} Tap Targets Sized")
         if result.tap_target_issues > 0:
             st.caption(f"Issues: {result.tap_target_issues} elements")
     
     with col2:
-        st.write(f"{'✅' if result.font_sizes_readable else '❌'} Readable Font Sizes")
+        st.write(f"{'[+]' if result.font_sizes_readable else '[-]'} Readable Font Sizes")
         if result.small_font_elements > 0:
             st.caption(f"Small fonts: {result.small_font_elements}")
     
     with col3:
-        st.write(f"{'✅' if result.content_width_fits_viewport else '⚠️'} Content Fits Viewport")
+        st.write(f"{'[+]' if result.content_width_fits_viewport else '[!]'} Content Fits Viewport")
     
     st.markdown("**Mobile Navigation & Images**")
     col1, col2, col3 = st.columns(3)
-    col1.write(f"{'✅' if result.mobile_navigation_friendly else '⚠️'} Mobile-Friendly Navigation")
-    col2.write(f"{'✅' if result.thumb_friendly_navigation else '⚠️'} Thumb-Friendly Nav")
-    col3.write(f"{'✅' if result.has_responsive_images else '⚠️'} Responsive Images")
+    col1.write(f"{'[+]' if result.mobile_navigation_friendly else '[!]'} Mobile-Friendly Navigation")
+    col2.write(f"{'[+]' if result.thumb_friendly_navigation else '[!]'} Thumb-Friendly Nav")
+    col3.write(f"{'[+]' if result.has_responsive_images else '[!]'} Responsive Images")
     
     st.markdown("**Mobile-Desktop Parity**")
     col1, col2, col3 = st.columns(3)
-    col1.write(f"{'✅' if result.mobile_desktop_parity else '⚠️'} Content Parity")
-    col2.write(f"{'✅' if result.mobile_meta_parity else '⚠️'} Meta Tags Parity")
-    col3.write(f"{'✅' if result.mobile_directives_parity else '⚠️'} Directives Parity")
+    col1.write(f"{'[+]' if result.mobile_desktop_parity else '[!]'} Content Parity")
+    col2.write(f"{'[+]' if result.mobile_meta_parity else '[!]'} Meta Tags Parity")
+    col3.write(f"{'[+]' if result.mobile_directives_parity else '[!]'} Directives Parity")
     col4 = st.columns(1)[0]
-    col4.write(f"{'✅' if result.favicon_in_mobile_serps else '⚠️'} Favicon for Mobile SERPs")
+    col4.write(f"{'[+]' if result.favicon_in_mobile_serps else '[!]'} Favicon for Mobile SERPs")
 
 
 def display_page_elements(result):
     """Display page elements analysis"""
-    st.markdown("### 💡 Page Elements Analysis")
+    st.markdown('<div class="section-header"><i class="fa-solid fa-puzzle-piece"></i> Page Elements Analysis</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Score", f"{result.page_elements_score}/100")
-    col2.metric("Multiple H1s", "❌ Yes" if result.has_multiple_h1 else "✅ No")
-    col3.metric("Title-Content Match", "✅ Yes" if result.title_matches_content else "⚠️ Check")
-    col4.metric("Unique Meta Desc", "✅ Yes" if result.meta_desc_is_unique else "⚠️ Check")
+    col2.metric("Multiple H1s", "Yes" if result.has_multiple_h1 else "No")
+    col3.metric("Title-Content Match", "Yes" if result.title_matches_content else "Check")
+    col4.metric("Unique Meta Desc", "Yes" if result.meta_desc_is_unique else "Check")
     
     st.markdown("**Content Structure**")
     col1, col2, col3 = st.columns(3)
-    col1.write(f"{'✅' if result.primary_content_clear else '⚠️'} Primary Content Clear")
-    col2.write(f"{'✅' if result.supplementary_content_marked else '⚠️'} Supplementary Content Marked")
-    col3.write(f"{'✅' if result.meta_desc_compelling else '⚠️'} Compelling Meta Description")
+    col1.write(f"{'[+]' if result.primary_content_clear else '[!]'} Primary Content Clear")
+    col2.write(f"{'[+]' if result.supplementary_content_marked else '[!]'} Supplementary Content Marked")
+    col3.write(f"{'[+]' if result.meta_desc_compelling else '[!]'} Compelling Meta Description")
     
     st.markdown("**Visual & Accessibility**")
     col1, col2 = st.columns(2)
-    col1.write(f"{'✅' if result.text_contrast_sufficient else '⚠️'} Sufficient Text Contrast")
-    col2.write(f"{'✅' if result.links_distinguishable else '⚠️'} Links Distinguishable")
+    col1.write(f"{'[+]' if result.text_contrast_sufficient else '[!]'} Sufficient Text Contrast")
+    col2.write(f"{'[+]' if result.links_distinguishable else '[!]'} Links Distinguishable")
 
 
 def main():
     # Sidebar
     with st.sidebar:
-        st.title("🔍 SEO Audit Tool")
-        st.markdown("**Version 3.0 - 300+ Parameters**")
+        st.markdown('<h2 style="margin-bottom:0;"><i class="fa-solid fa-magnifying-glass-chart" style="color:#6366f1;"></i> SEO Audit Tool</h2>', unsafe_allow_html=True)
+        st.markdown("**Version 3.0** | 300+ Parameters")
         st.markdown("---")
         
         st.markdown("""
         **Comprehensive Analysis:**
-        - 📋 Meta Tags (20+ checks)
-        - 🌐 Social Tags (25+ checks)
-        - 📝 Headings (20+ checks)
-        - 🖼️ Images (25+ checks)
-        - 🔗 Links (30+ checks)
-        - ⚙️ Technical (40+ checks)
-        - 📖 Content (35+ checks)
-        - 📱 Mobile/UX (15+ checks)
-        - 🌍 i18n (10+ checks)
-        - 🏪 E-commerce (15+ checks)
-        - ♿ Accessibility (15+ checks)
-        - ⚡ Performance (10+ checks)
-        - 📈 Crawling & Indexing (15+ checks)
-        - ✍️ Content Quality/E-E-A-T (20+ checks)
-        - 🗝️ Keyword Analysis (15+ checks)
-        - 📱 Advanced Mobile (20+ checks)
-        - 💡 Page Elements (15+ checks)
+        
+        - Meta Tags (20+ checks)
+        - Social Tags (25+ checks)
+        - Headings (20+ checks)
+        - Images (25+ checks)
+        - Links (30+ checks)
+        - Technical (40+ checks)
+        - Content (35+ checks)
+        - Mobile/UX (15+ checks)
+        - Internationalization (10+ checks)
+        - E-commerce (15+ checks)
+        - Accessibility (15+ checks)
+        - Performance (10+ checks)
+        - Crawling & Indexing (15+ checks)
+        - Content Quality/E-E-A-T (20+ checks)
+        - Keyword Analysis (15+ checks)
+        - Advanced Mobile (20+ checks)
+        - Page Elements (15+ checks)
         
         ---
         
@@ -831,16 +850,15 @@ def main():
         
         ---
         
-        **Created by:**
+        **Created by:**  
         [Muntasir Islam](https://muntasir-islam.github.io)
         
-        💼 SEO Specialist  
-        🌐 Web Strategist
+        SEO Specialist | Web Strategist
         """)
     
     # Main content
-    st.title("🔍 Advanced SEO Audit Tool")
-    st.markdown("Enterprise-grade SEO analysis with **300+ parameters** - Plerdy Checklist Compliant. Enter a URL below to start.")
+    st.markdown('<h1><i class="fa-solid fa-magnifying-glass-chart" style="color:#6366f1;"></i> Advanced SEO Audit Tool</h1>', unsafe_allow_html=True)
+    st.markdown("Enterprise-grade SEO analysis with **300+ parameters** — Plerdy Checklist Compliant. Enter a URL below to start.")
     
     # Input row
     col1, col2 = st.columns([3, 1])
@@ -861,10 +879,10 @@ def main():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        audit_button = st.button("🚀 Run Advanced SEO Audit", use_container_width=True)
+        audit_button = st.button("Run SEO Audit", use_container_width=True)
     
     if audit_button and url:
-        with st.spinner("🔍 Analyzing 300+ SEO parameters... This may take 10-20 seconds."):
+        with st.spinner("Analyzing 300+ SEO parameters... This may take 10-20 seconds."):
             progress = st.progress(0)
             status = st.empty()
             
@@ -882,8 +900,7 @@ def main():
             status.empty()
             
             if result:
-                st.success(f"✅ Audit complete for {result.url}")
-                st.balloons()
+                st.success(f"Audit complete for {result.url}")
                 
                 # Display all sections
                 display_score_card(result)
@@ -893,13 +910,13 @@ def main():
                 
                 # Use tabs for organization - 7 tabs now
                 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-                    "📋 Meta & Social",
-                    "📝 Content & Structure",
-                    "⚙️ Technical",
-                    "📱 Mobile & A11y",
-                    "📈 Crawling & Indexing",
-                    "🗝️ Keywords & Quality",
-                    "🚨 Issues"
+                    "Meta & Social",
+                    "Content & Structure",
+                    "Technical",
+                    "Mobile & A11y",
+                    "Crawling & Indexing",
+                    "Keywords & Quality",
+                    "Issues"
                 ])
                 
                 with tab1:
@@ -949,11 +966,11 @@ def main():
                 display_export(result)
                 
             else:
-                st.error("❌ Failed to audit the website. Please check the URL and try again.")
-                st.info("💡 **Tips:**\n- Make sure the URL is accessible\n- Try with 'https://' prefix\n- Some websites block automated requests")
+                st.error("Failed to audit the website. Please check the URL and try again.")
+                st.info("**Tips:**\n- Make sure the URL is accessible\n- Try with 'https://' prefix\n- Some websites block automated requests")
     
     elif audit_button and not url:
-        st.warning("⚠️ Please enter a URL to audit")
+        st.warning("Please enter a URL to audit")
     
     # Footer
     st.markdown("---")
@@ -964,24 +981,24 @@ def main():
         st.markdown("""
         <div style="text-align: center; padding: 10px;">
             <a href="https://github.com/muntasir-islam/seo_audit_tool" target="_blank" style="text-decoration: none;">
-                ⭐ Star on GitHub
+                <i class="fa-brands fa-github"></i> Star on GitHub
             </a>
             &nbsp;|&nbsp;
             <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20SEO%20Audit%20Tool%20with%20300%2B%20parameters!&url=https://seo-audit-tool.streamlit.app" target="_blank" style="text-decoration: none;">
-                🐦 Share on Twitter
+                <i class="fa-brands fa-x-twitter"></i> Share on X
             </a>
             &nbsp;|&nbsp;
             <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://seo-audit-tool.streamlit.app" target="_blank" style="text-decoration: none;">
-                💼 Share on LinkedIn
+                <i class="fa-brands fa-linkedin"></i> Share on LinkedIn
             </a>
         </div>
         """, unsafe_allow_html=True)
     
     st.markdown("""
     <div style="text-align: center; color: #64748b; padding: 20px;">
-        <p>Made with ❤️ by <a href="https://muntasir-islam.github.io" target="_blank" style="color: #6366f1;">Muntasir Islam</a></p>
-        <p>© 2026 | Advanced SEO Audit Tool v3.0 - 300+ Parameters</p>
-        <p style="font-size: 0.8rem;">🔒 No data stored • 🚀 Powered by Streamlit</p>
+        <p>Built by <a href="https://muntasir-islam.github.io" target="_blank" style="color: #6366f1;">Muntasir Islam</a></p>
+        <p style="font-size: 0.9rem;">&copy; 2026 | Advanced SEO Audit Tool v3.0</p>
+        <p style="font-size: 0.8rem;"><i class="fa-solid fa-lock"></i> No data stored &nbsp;&bull;&nbsp; Powered by Streamlit</p>
     </div>
     """, unsafe_allow_html=True)
 
