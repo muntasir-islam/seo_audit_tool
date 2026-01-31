@@ -34,90 +34,346 @@ st.set_page_config(
 # Font Awesome CDN and Custom CSS
 st.markdown("""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    .main { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%); }
-    .stApp { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%); }
-    .score-card {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        border-radius: 20px;
-        padding: 30px;
+    /* Base styling */
+    * { font-family: 'Inter', sans-serif; }
+    
+    .main { 
+        background: linear-gradient(180deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+    }
+    .stApp { 
+        background: linear-gradient(180deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+    }
+    
+    /* Hero section */
+    .hero-container {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 24px;
+        padding: 40px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-container::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+        animation: pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    
+    /* Score card styling */
+    .score-card-container {
+        background: linear-gradient(145deg, #1a1a2e 0%, #16162a 100%);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 24px;
+        padding: 40px;
         text-align: center;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(99, 102, 241, 0.1);
+        position: relative;
+        overflow: hidden;
     }
-    .metric-card {
-        background: #1e293b;
-        border-radius: 15px;
+    .score-card-container::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
+    }
+    
+    .score-ring {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+        flex-direction: column;
+        position: relative;
+        background: rgba(0,0,0,0.4);
+    }
+    .score-ring::before {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 50%;
+        padding: 4px;
+        background: conic-gradient(from 0deg, var(--score-color) calc(var(--score-percent) * 3.6deg), rgba(255,255,255,0.1) 0);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+    }
+    
+    /* Stats cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin: 20px 0;
+    }
+    .stat-card {
+        background: linear-gradient(145deg, #1e1e32 0%, #16162a 100%);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
         padding: 20px;
-        margin: 10px 0;
+        text-align: center;
+        transition: all 0.3s ease;
     }
-    .status-good { color: #22c55e; }
-    .status-warning { color: #eab308; }
-    .status-bad { color: #ef4444; }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(99, 102, 241, 0.3);
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+    }
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .stat-card.passed .stat-value { background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%); -webkit-background-clip: text; }
+    .stat-card.warning .stat-value { background: linear-gradient(135deg, #eab308 0%, #fbbf24 100%); -webkit-background-clip: text; }
+    .stat-card.critical .stat-value { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); -webkit-background-clip: text; }
+    
+    /* Section headers */
     .section-header {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 1.3rem;
+        gap: 12px;
+        font-size: 1.25rem;
         font-weight: 600;
-        margin: 20px 0 15px 0;
-        color: #e2e8f0;
+        margin: 30px 0 20px 0;
+        color: #f1f5f9;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
     }
     .section-header i {
         color: #6366f1;
-        width: 24px;
+        font-size: 1.1rem;
+        width: 20px;
+        text-align: center;
     }
-    .issue-critical {
-        background: rgba(239, 68, 68, 0.1);
-        border-left: 4px solid #ef4444;
-        padding: 15px;
+    
+    /* Info cards */
+    .info-card {
+        background: linear-gradient(145deg, #1e1e32 0%, #16162a 100%);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 20px;
         margin: 10px 0;
-        border-radius: 0 10px 10px 0;
+    }
+    .info-card-header {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #94a3b8;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* Issue cards */
+    .issue-critical {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-left: 4px solid #ef4444;
+        padding: 16px 20px;
+        margin: 10px 0;
+        border-radius: 12px;
+        color: #fca5a5;
     }
     .issue-warning {
-        background: rgba(234, 179, 8, 0.1);
+        background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0.05) 100%);
+        border: 1px solid rgba(234, 179, 8, 0.3);
         border-left: 4px solid #eab308;
-        padding: 15px;
+        padding: 16px 20px;
         margin: 10px 0;
-        border-radius: 0 10px 10px 0;
+        border-radius: 12px;
+        color: #fde047;
     }
     .issue-recommendation {
-        background: rgba(59, 130, 246, 0.1);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+        border: 1px solid rgba(59, 130, 246, 0.3);
         border-left: 4px solid #3b82f6;
-        padding: 15px;
+        padding: 16px 20px;
         margin: 10px 0;
-        border-radius: 0 10px 10px 0;
+        border-radius: 12px;
+        color: #93c5fd;
     }
     .issue-passed {
-        background: rgba(34, 197, 94, 0.1);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+        border: 1px solid rgba(34, 197, 94, 0.3);
         border-left: 4px solid #22c55e;
-        padding: 15px;
+        padding: 16px 20px;
         margin: 10px 0;
-        border-radius: 0 10px 10px 0;
+        border-radius: 12px;
+        color: #86efac;
     }
+    
+    /* Button styling */
     .stButton>button {
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
         border: none;
-        padding: 15px 30px;
-        font-size: 1.1rem;
-        border-radius: 10px;
+        padding: 16px 32px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
         width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
     }
-    .category-header {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        padding: 15px 20px;
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* Input styling */
+    .stTextInput>div>div>input {
+        background: rgba(30, 30, 50, 0.8);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 12px;
+        color: #f1f5f9;
+        padding: 14px 16px;
+        font-size: 1rem;
+    }
+    .stTextInput>div>div>input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        background: rgba(30, 30, 50, 0.5);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        border-radius: 8px;
+        color: #94a3b8;
+        font-weight: 500;
+        padding: 10px 20px;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+    }
+    
+    /* Metric styling */
+    [data-testid="stMetricValue"] {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #64748b;
+        font-weight: 500;
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background: rgba(30, 30, 50, 0.5);
         border-radius: 10px;
-        margin: 20px 0 10px 0;
+        color: #e2e8f0;
     }
-    .param-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 10px;
+    
+    /* Download button */
+    .stDownloadButton>button {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        color: #e2e8f0;
+        border-radius: 10px;
+        transition: all 0.3s ease;
     }
-    .status-icon { font-size: 0.9rem; margin-right: 4px; }
-    .pass-icon { color: #22c55e; }
-    .fail-icon { color: #ef4444; }
-    .warn-icon { color: #eab308; }
+    .stDownloadButton>button:hover {
+        background: linear-gradient(135deg, #334155 0%, #475569 100%);
+        border-color: #6366f1;
+    }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #12121a 0%, #0a0a0f 100%);
+        border-right: 1px solid rgba(99, 102, 241, 0.1);
+    }
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 2rem;
+    }
+    
+    /* Progress bar */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    
+    /* Divider */
+    hr {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+        margin: 30px 0;
+    }
+    
+    /* Footer */
+    .footer-container {
+        background: linear-gradient(135deg, rgba(30, 30, 50, 0.5) 0%, rgba(20, 20, 40, 0.5) 100%);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 30px;
+        margin-top: 40px;
+        text-align: center;
+    }
+    .footer-links a {
+        color: #94a3b8;
+        text-decoration: none;
+        margin: 0 15px;
+        transition: color 0.3s ease;
+    }
+    .footer-links a:hover {
+        color: #6366f1;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    /* Status indicators */
+    .status-pass { color: #22c55e; }
+    .status-fail { color: #ef4444; }
+    .status-warn { color: #eab308; }
+    
+    /* Glow effects */
+    .glow-green { text-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+    .glow-red { text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+    .glow-yellow { text-shadow: 0 0 20px rgba(234, 179, 8, 0.5); }
+    .glow-purple { text-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -132,44 +388,64 @@ def display_score_card(result):
         score_color = "#22c55e"
         score_label = "Excellent"
         grade_icon = "fa-solid fa-trophy"
+        glow_class = "glow-green"
     elif result.score >= 60:
         score_color = "#eab308"
         score_label = "Needs Improvement"
         grade_icon = "fa-solid fa-chart-line"
+        glow_class = "glow-yellow"
     else:
         score_color = "#ef4444"
         score_label = "Poor"
         grade_icon = "fa-solid fa-triangle-exclamation"
+        glow_class = "glow-red"
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown(f"""
-        <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 20px; margin-bottom: 30px;">
-            <div style="width: 180px; height: 180px; border-radius: 50%; border: 10px solid {score_color}; 
-                        display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
-                        background: rgba(0,0,0,0.3); flex-direction: column;">
-                <span style="font-size: 3.5rem; font-weight: bold; color: {score_color};">{result.score}</span>
-                <span style="font-size: 1.2rem; color: {score_color};">Grade: {result.grade}</span>
+        <div class="score-card-container animate-in">
+            <div class="score-ring" style="--score-color: {score_color}; --score-percent: {result.score};">
+                <span style="font-size: 3.5rem; font-weight: 700; color: {score_color}; line-height: 1;" class="{glow_class}">{result.score}</span>
+                <span style="font-size: 1.1rem; color: {score_color}; font-weight: 500;">/ 100</span>
             </div>
-            <p style="font-size: 1.5rem; color: {score_color}; font-weight: 600;"><i class="{grade_icon}"></i> {score_label}</p>
-            <p style="color: #94a3b8; margin-top: 10px;">Audited: {result.audit_date}</p>
-            <p style="color: #64748b; font-size: 0.9rem;">300+ Parameters Analyzed</p>
+            <div style="margin-bottom: 15px;">
+                <span style="background: linear-gradient(135deg, {score_color} 0%, {score_color}88 100%); padding: 8px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; color: #0a0a0f;">
+                    Grade {result.grade}
+                </span>
+            </div>
+            <p style="font-size: 1.4rem; color: {score_color}; font-weight: 600; margin: 15px 0;">
+                <i class="{grade_icon}" style="margin-right: 8px;"></i>{score_label}
+            </p>
+            <div style="display: flex; justify-content: center; gap: 30px; margin-top: 20px; color: #64748b; font-size: 0.85rem;">
+                <span><i class="fa-regular fa-calendar" style="margin-right: 6px;"></i>{result.audit_date}</span>
+                <span><i class="fa-solid fa-list-check" style="margin-right: 6px;"></i>300+ Checks</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
 
 def display_quick_stats(result):
     """Display quick stats row"""
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Passed", result.checks_passed, delta="checks")
-    with col2:
-        st.metric("Warnings", result.checks_warnings, delta="issues", delta_color="off")
-    with col3:
-        st.metric("Critical", result.checks_failed, delta="issues", delta_color="inverse")
-    with col4:
-        st.metric("Response", f"{result.response_time:.2f}s", delta=f"{result.page_size_kb}KB")
+    st.markdown(f"""
+    <div class="stats-grid animate-in">
+        <div class="stat-card passed">
+            <div class="stat-value">{result.checks_passed}</div>
+            <div class="stat-label"><i class="fa-solid fa-circle-check" style="color: #22c55e; margin-right: 5px;"></i>Passed</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-value">{result.checks_warnings}</div>
+            <div class="stat-label"><i class="fa-solid fa-triangle-exclamation" style="color: #eab308; margin-right: 5px;"></i>Warnings</div>
+        </div>
+        <div class="stat-card critical">
+            <div class="stat-value">{result.checks_failed}</div>
+            <div class="stat-label"><i class="fa-solid fa-circle-xmark" style="color: #ef4444; margin-right: 5px;"></i>Critical</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{result.response_time:.2f}s</div>
+            <div class="stat-label"><i class="fa-solid fa-gauge-high" style="color: #6366f1; margin-right: 5px;"></i>Response</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def display_meta_tags(result):
@@ -581,8 +857,12 @@ def display_export(result):
     """Display export options"""
     st.markdown('<div class="section-header"><i class="fa-solid fa-download"></i> Export Report</div>', unsafe_allow_html=True)
     
-    st.markdown("**Professional PDF Report (Recommended)**")
-    st.caption("Easy-to-understand report perfect for sharing with clients or team members")
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+        <p style="color: #a5b4fc; font-weight: 600; margin: 0 0 5px 0;"><i class="fa-solid fa-file-pdf" style="margin-right: 8px;"></i>Professional PDF Report</p>
+        <p style="color: #64748b; font-size: 0.9rem; margin: 0;">Perfect for sharing with clients or team members</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     try:
         from pdf_report_generator import generate_pdf_report
@@ -601,14 +881,17 @@ def display_export(result):
         st.error(f"Error generating PDF: {str(e)}")
     
     st.markdown("---")
-    st.markdown("**Other Export Formats**")
+    
+    st.markdown("""
+    <p style="color: #94a3b8; font-weight: 500; margin-bottom: 15px;"><i class="fa-solid fa-file-export" style="color: #6366f1; margin-right: 8px;"></i>Other Export Formats</p>
+    """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         json_data = json.dumps(asdict(result), indent=2, default=str)
         st.download_button(
-            label="Download JSON",
+            label="JSON Data",
             data=json_data,
             file_name=f"seo_audit_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.json",
             mime="application/json",
@@ -616,10 +899,9 @@ def display_export(result):
         )
     
     with col2:
-        # Generate text report
         text_report = print_audit_report(result)
         st.download_button(
-            label="Download Text Report",
+            label="Text Report",
             data=text_report,
             file_name=f"seo_audit_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.txt",
             mime="text/plain",
@@ -627,7 +909,6 @@ def display_export(result):
         )
     
     with col3:
-        # CSV summary
         summary_data = {
             "Metric": ["Score", "Grade", "Words", "Images", "Links", "Critical", "Warnings"],
             "Value": [result.score, result.grade, result.word_count, result.total_images, 
@@ -636,7 +917,7 @@ def display_export(result):
         df = pd.DataFrame(summary_data)
         csv = df.to_csv(index=False)
         st.download_button(
-            label="Download CSV Summary",
+            label="CSV Summary",
             data=csv,
             file_name=f"seo_summary_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
@@ -819,46 +1100,73 @@ def display_page_elements(result):
 def main():
     # Sidebar
     with st.sidebar:
-        st.markdown('<h2 style="margin-bottom:0;"><i class="fa-solid fa-magnifying-glass-chart" style="color:#6366f1;"></i> SEO Audit Tool</h2>', unsafe_allow_html=True)
-        st.markdown("**Version 3.0** | 300+ Parameters")
+        st.markdown("""
+        <div style="text-align: center; padding: 20px 0;">
+            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);">
+                <i class="fa-solid fa-magnifying-glass-chart" style="color: white; font-size: 1.5rem;"></i>
+            </div>
+            <h2 style="margin: 0; font-size: 1.3rem; color: #f1f5f9;">SEO Audit Tool</h2>
+            <p style="color: #64748b; font-size: 0.85rem; margin: 5px 0 0 0;">Version 3.0 | 300+ Checks</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
         st.markdown("---")
         
         st.markdown("""
-        **Comprehensive Analysis:**
+        <div style="color: #94a3b8; font-size: 0.9rem;">
+        <p style="font-weight: 600; color: #e2e8f0; margin-bottom: 12px;">Analysis Categories:</p>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Meta Tags <span style="float: right; color: #6366f1;">20+</span></li>
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Social Tags <span style="float: right; color: #6366f1;">25+</span></li>
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Content & Headings <span style="float: right; color: #6366f1;">55+</span></li>
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Images & Links <span style="float: right; color: #6366f1;">55+</span></li>
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Technical SEO <span style="float: right; color: #6366f1;">40+</span></li>
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Mobile & UX <span style="float: right; color: #6366f1;">35+</span></li>
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Accessibility <span style="float: right; color: #6366f1;">15+</span></li>
+            <li style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">E-E-A-T & Quality <span style="float: right; color: #6366f1;">35+</span></li>
+            <li style="padding: 6px 0;">Performance <span style="float: right; color: #6366f1;">25+</span></li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
         
-        - Meta Tags (20+ checks)
-        - Social Tags (25+ checks)
-        - Headings (20+ checks)
-        - Images (25+ checks)
-        - Links (30+ checks)
-        - Technical (40+ checks)
-        - Content (35+ checks)
-        - Mobile/UX (15+ checks)
-        - Internationalization (10+ checks)
-        - E-commerce (15+ checks)
-        - Accessibility (15+ checks)
-        - Performance (10+ checks)
-        - Crawling & Indexing (15+ checks)
-        - Content Quality/E-E-A-T (20+ checks)
-        - Keyword Analysis (15+ checks)
-        - Advanced Mobile (20+ checks)
-        - Page Elements (15+ checks)
+        st.markdown("---")
         
-        ---
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 15px; text-align: center;">
+            <p style="color: #a5b4fc; font-size: 0.8rem; margin: 0;">Plerdy Checklist Compliant</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        **Plerdy Checklist Compliant**
+        st.markdown("---")
         
-        ---
-        
-        **Created by:**  
-        [Muntasir Islam](https://muntasir-islam.github.io)
-        
-        SEO Specialist | Web Strategist
-        """)
+        st.markdown("""
+        <div style="text-align: center; color: #64748b; font-size: 0.85rem;">
+            <p style="margin-bottom: 8px;">Created by</p>
+            <a href="https://muntasir-islam.github.io" target="_blank" style="color: #a5b4fc; text-decoration: none; font-weight: 500;">Muntasir Islam</a>
+            <p style="margin-top: 5px; font-size: 0.8rem;">SEO Specialist | Web Strategist</p>
+        </div>
+        """, unsafe_allow_html=True)
     
-    # Main content
-    st.markdown('<h1><i class="fa-solid fa-magnifying-glass-chart" style="color:#6366f1;"></i> Advanced SEO Audit Tool</h1>', unsafe_allow_html=True)
-    st.markdown("Enterprise-grade SEO analysis with **300+ parameters** — Plerdy Checklist Compliant. Enter a URL below to start.")
+    # Hero Section
+    st.markdown("""
+    <div class="hero-container">
+        <div style="position: relative; z-index: 1;">
+            <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0 0 10px 0; background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Advanced SEO Audit Tool
+            </h1>
+            <p style="color: #94a3b8; font-size: 1.1rem; margin: 0;">
+                Enterprise-grade analysis with <span style="color: #a5b4fc; font-weight: 600;">300+ parameters</span> — Plerdy Checklist Compliant
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Input section with better styling
+    st.markdown("""
+    <div style="background: linear-gradient(145deg, #1e1e32 0%, #16162a 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 25px; margin-bottom: 20px;">
+        <p style="color: #e2e8f0; font-weight: 500; margin-bottom: 15px;"><i class="fa-solid fa-globe" style="color: #6366f1; margin-right: 8px;"></i>Enter Website Details</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Input row
     col1, col2 = st.columns([3, 1])
@@ -867,7 +1175,8 @@ def main():
         url = st.text_input(
             "Website URL",
             placeholder="example.com or https://example.com",
-            help="Enter the full URL of the page you want to audit"
+            help="Enter the full URL of the page you want to audit",
+            label_visibility="collapsed"
         )
     
     with col2:
@@ -973,32 +1282,27 @@ def main():
         st.warning("Please enter a URL to audit")
     
     # Footer
-    st.markdown("---")
-    
-    # Social sharing and GitHub
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("""
-        <div style="text-align: center; padding: 10px;">
-            <a href="https://github.com/muntasir-islam/seo_audit_tool" target="_blank" style="text-decoration: none;">
+    st.markdown("""
+    <div class="footer-container">
+        <div class="footer-links" style="margin-bottom: 20px;">
+            <a href="https://github.com/muntasir-islam/seo_audit_tool" target="_blank">
                 <i class="fa-brands fa-github"></i> Star on GitHub
             </a>
-            &nbsp;|&nbsp;
-            <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20SEO%20Audit%20Tool%20with%20300%2B%20parameters!&url=https://seo-audit-tool.streamlit.app" target="_blank" style="text-decoration: none;">
+            <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20SEO%20Audit%20Tool%20with%20300%2B%20parameters!&url=https://seo-audit-tool.streamlit.app" target="_blank">
                 <i class="fa-brands fa-x-twitter"></i> Share on X
             </a>
-            &nbsp;|&nbsp;
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://seo-audit-tool.streamlit.app" target="_blank" style="text-decoration: none;">
-                <i class="fa-brands fa-linkedin"></i> Share on LinkedIn
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://seo-audit-tool.streamlit.app" target="_blank">
+                <i class="fa-brands fa-linkedin"></i> LinkedIn
             </a>
         </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style="text-align: center; color: #64748b; padding: 20px;">
-        <p>Built by <a href="https://muntasir-islam.github.io" target="_blank" style="color: #6366f1;">Muntasir Islam</a></p>
-        <p style="font-size: 0.9rem;">&copy; 2026 | Advanced SEO Audit Tool v3.0</p>
-        <p style="font-size: 0.8rem;"><i class="fa-solid fa-lock"></i> No data stored &nbsp;&bull;&nbsp; Powered by Streamlit</p>
+        <div style="color: #64748b;">
+            <p style="margin: 0 0 8px 0;">Built by <a href="https://muntasir-islam.github.io" target="_blank" style="color: #a5b4fc; text-decoration: none;">Muntasir Islam</a></p>
+            <p style="font-size: 0.85rem; margin: 0 0 8px 0; color: #475569;">&copy; 2026 | Advanced SEO Audit Tool v3.0</p>
+            <div style="display: flex; justify-content: center; gap: 20px; font-size: 0.8rem; color: #475569;">
+                <span><i class="fa-solid fa-lock" style="color: #22c55e;"></i> No data stored</span>
+                <span><i class="fa-solid fa-bolt" style="color: #6366f1;"></i> Powered by Streamlit</span>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
