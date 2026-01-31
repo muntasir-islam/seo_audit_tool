@@ -1216,40 +1216,47 @@ def main():
             progress = st.progress(0)
             status = st.empty()
             
-            status.text("Initializing audit...")
-            progress.progress(10)
-            
-            # Create a fresh auditor instance for each audit
-            auditor = AdvancedSEOAuditor(url, target_keyword=keyword if keyword else None)
-            
-            status.text("Fetching page content...")
-            progress.progress(20)
-            
-            status.text("Running comprehensive analysis...")
-            progress.progress(40)
-            
-            # Debug: Print URL being audited
-            print(f"DEBUG: Auditing URL: {auditor.url}")
-            
-            result = auditor.run_audit()
-            
-            # Debug: Print score if result exists
-            if result:
-                print(f"DEBUG: Audit completed. Score: {result.score}, Title: {result.title}")
-            
-            progress.progress(100)
-            status.empty()
-            
-            if result:
-                # Store in session state to persist across reruns
-                st.session_state.audit_result = result
-                st.session_state.audited_url = normalized_input_url
-                # Show the URL and score for verification
-                st.toast(f"✅ Audit complete! Score: {result.score} for {result.url}")
-                st.rerun()  # Rerun to display results cleanly
-            else:
-                st.error("Failed to audit the website. Please check the URL and try again.")
-                st.info("**Tips:**\n- Make sure the URL is accessible\n- Try with 'https://' prefix\n- Some websites block automated requests")
+            try:
+                status.text("Initializing audit...")
+                progress.progress(10)
+                
+                # Create a fresh auditor instance for each audit
+                auditor = AdvancedSEOAuditor(url, target_keyword=keyword if keyword else None)
+                
+                status.text(f"Fetching and analyzing {auditor.url}...")
+                progress.progress(30)
+                
+                # Run the full audit
+                result = auditor.run_audit()
+                
+                progress.progress(90)
+                
+                if result:
+                    # Show debug info about what was found
+                    status.text(f"Found: {result.title[:40] if result.title else 'No title'}...")
+                    progress.progress(100)
+                    status.empty()
+                    
+                    # Store in session state to persist across reruns
+                    st.session_state.audit_result = result
+                    st.session_state.audited_url = normalized_input_url
+                    
+                    # Show the URL and score for verification
+                    st.toast(f"✅ Score: {result.score} | {result.url}")
+                    st.rerun()  # Rerun to display results cleanly
+                else:
+                    progress.progress(100)
+                    status.empty()
+                    st.error(f"Failed to audit: {auditor.url}")
+                    st.info("**Possible reasons:**\n- Website blocks automated requests\n- URL is unreachable\n- Network/firewall issues\n- Try a different URL")
+                        
+            except Exception as e:
+                progress.progress(100)
+                status.empty()
+                st.error(f"Error during audit: {str(e)}")
+                import traceback
+                with st.expander("Error Details"):
+                    st.code(traceback.format_exc())
     
     elif audit_button and not url:
         st.warning("Please enter a URL to audit")
@@ -1263,7 +1270,19 @@ def main():
         if url and current_normalized != st.session_state.audited_url:
             st.info(f"💡 Showing results for: **{st.session_state.audited_url}**. Click 'Run SEO Audit' to analyze the new URL.")
         
-        st.success(f"Audit complete for {result.url}")
+        st.success(f"✅ Audit complete for **{result.url}**")
+        
+        # Debug info - show key data that was extracted
+        with st.expander("📋 Debug: Extracted Data", expanded=False):
+            st.write(f"**URL:** {result.url}")
+            st.write(f"**Title:** {result.title or 'Not found'}")
+            st.write(f"**Title Length:** {result.title_length} characters")
+            st.write(f"**Meta Description:** {result.meta_description[:200] if result.meta_description else 'Not found'}...")
+            st.write(f"**Score:** {result.score}")
+            st.write(f"**Grade:** {result.grade}")
+            st.write(f"**Response Time:** {result.response_time:.2f}s")
+            st.write(f"**Word Count:** {result.word_count}")
+            st.write(f"**H1 Count:** {result.h1_count}")
         
         # Display all sections
         display_score_card(result)

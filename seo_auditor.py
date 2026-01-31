@@ -646,15 +646,24 @@ class AdvancedSEOAuditor:
             'Connection': 'keep-alive',
         }
         try:
+            print(f"  → Fetching URL: {self.url}")
             start_time = time.time()
             self.response = requests.get(self.url, headers=request_headers, timeout=30, allow_redirects=True)
             self.response_time = time.time() - start_time
+            print(f"  → Status Code: {self.response.status_code}")
+            print(f"  → Response Time: {self.response_time:.2f}s")
+            print(f"  → Content Length: {len(self.response.text)} chars")
             self.response.raise_for_status()
             self.soup = BeautifulSoup(self.response.text, 'html.parser')
             self.headers = dict(self.response.headers)
+            
+            # Debug: verify soup was created and has content
+            title = self.soup.find('title')
+            print(f"  → Title found: {title.get_text()[:50] if title else 'None'}...")
+            
             return True
         except requests.RequestException as e:
-            print(f"Error fetching {self.url}: {e}")
+            print(f"  ✗ Error fetching {self.url}: {e}")
             return False
     
     def analyze_title(self) -> dict:
@@ -2270,6 +2279,9 @@ class AdvancedSEOAuditor:
         print(f"\n🔍 Starting Advanced SEO Audit for: {self.url}")
         print("=" * 60)
         print("Analyzing 200+ SEO parameters...")
+        
+        # Reset issues to ensure fresh state
+        self.issues = {"critical": [], "warnings": [], "recommendations": [], "passed": []}
         
         if not self.fetch_page():
             return None
