@@ -2275,7 +2275,7 @@ class AdvancedSEOAuditor:
         
         return final_score, grade
     
-    def run_audit(self) -> Optional[SEOAuditResult]:
+    def run_audit(self, use_existing_fetch: bool = False) -> Optional[SEOAuditResult]:
         print(f"\n🔍 Starting Advanced SEO Audit for: {self.url}")
         print("=" * 60)
         print("Analyzing 200+ SEO parameters...")
@@ -2283,8 +2283,13 @@ class AdvancedSEOAuditor:
         # Reset issues to ensure fresh state
         self.issues = {"critical": [], "warnings": [], "recommendations": [], "passed": []}
         
-        if not self.fetch_page():
-            return None
+        if not use_existing_fetch:
+            if not self.fetch_page():
+                return None
+        else:
+            if self.soup is None or self.response is None:
+                if not self.fetch_page():
+                    return None
         
         print("  ✓ Analyzing meta tags...")
         title_data = self.analyze_title()

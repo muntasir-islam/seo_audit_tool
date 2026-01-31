@@ -1251,9 +1251,11 @@ def main():
             }
             
             try:
+                fetch_start = time.time()
                 response = req.get(auditor.url, headers=fetch_headers, timeout=30, allow_redirects=True)
+                fetch_duration = time.time() - fetch_start
                 with debug_container:
-                    st.success(f"✅ HTTP Status: **{response.status_code}** | Content: **{len(response.text):,}** chars")
+                    st.success(f"✅ HTTP Status: **{response.status_code}** | Content: **{len(response.text):,}** chars | Time: **{fetch_duration:.2f}s**")
                 
                 if response.status_code == 200:
                     soup = BS(response.text, 'html.parser')
@@ -1267,8 +1269,14 @@ def main():
                     status.text("Running full audit analysis...")
                     progress.progress(50)
                     
-                    # Now run the full audit
-                    result = auditor.run_audit()
+                    # Use the fetched response for the full audit
+                    auditor.response = response
+                    auditor.response_time = fetch_duration
+                    auditor.headers = dict(response.headers)
+                    auditor.soup = soup
+                    
+                    # Now run the full audit without re-fetching
+                    result = auditor.run_audit(use_existing_fetch=True)
                     
                     progress.progress(100)
                     status.empty()
