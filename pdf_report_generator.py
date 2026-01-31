@@ -65,9 +65,9 @@ class SEOPDFReportGenerator:
             fontName='Helvetica-Bold'
         ))
         
-        # Body text
+        # Body text - use custom name to avoid conflict
         self.styles.add(ParagraphStyle(
-            name='BodyText',
+            name='CustomBody',
             parent=self.styles['Normal'],
             fontSize=11,
             textColor=colors.HexColor('#334155'),
@@ -83,7 +83,6 @@ class SEOPDFReportGenerator:
             fontSize=10,
             textColor=colors.HexColor('#64748b'),
             spaceAfter=6,
-            fontStyle='italic',
             leading=14
         ))
         
@@ -284,8 +283,8 @@ class SEOPDFReportGenerator:
         story.append(Spacer(1, 20))
         
         # URL
-        story.append(Paragraph(f"<b>Website:</b> {r.url}", self.styles['BodyText']))
-        story.append(Paragraph(f"<b>Report Date:</b> {r.audit_date}", self.styles['BodyText']))
+        story.append(Paragraph(f"<b>Website:</b> {r.url}", self.styles['CustomBody']))
+        story.append(Paragraph(f"<b>Report Date:</b> {r.audit_date}", self.styles['CustomBody']))
         story.append(Spacer(1, 30))
         
         # Main Score
@@ -303,7 +302,7 @@ class SEOPDFReportGenerator:
         # Grade explanation
         story.append(Paragraph(
             self._get_grade_explanation(r.grade, r.score),
-            ParagraphStyle('GradeExplain', parent=self.styles['BodyText'], 
+            ParagraphStyle('GradeExplain', parent=self.styles['CustomBody'], 
                           alignment=TA_CENTER, fontSize=14)
         ))
         
@@ -367,9 +366,9 @@ class SEOPDFReportGenerator:
         
         if good_items:
             for item in good_items[:6]:
-                story.append(Paragraph(f"• {item}", self.styles['BodyText']))
+                story.append(Paragraph(f"• {item}", self.styles['CustomBody']))
         else:
-            story.append(Paragraph("• Your website has potential - let's work on improvements!", self.styles['BodyText']))
+            story.append(Paragraph("• Your website has potential - let's work on improvements!", self.styles['CustomBody']))
         
         story.append(Spacer(1, 15))
         
@@ -396,9 +395,9 @@ class SEOPDFReportGenerator:
         
         if attention_items:
             for item in attention_items[:6]:
-                story.append(Paragraph(f"• {item}", self.styles['BodyText']))
+                story.append(Paragraph(f"• {item}", self.styles['CustomBody']))
         else:
-            story.append(Paragraph("• Great job! No major issues found.", self.styles['BodyText']))
+            story.append(Paragraph("• Great job! No major issues found.", self.styles['CustomBody']))
         
         story.append(PageBreak())
         
@@ -565,7 +564,7 @@ class SEOPDFReportGenerator:
             for i, issue in enumerate(r.critical_issues[:8], 1):
                 story.append(Paragraph(
                     f"<b>{i}.</b> {self._format_issue_for_non_technical(issue)}",
-                    self.styles['BodyText']
+                    self.styles['CustomBody']
                 ))
             story.append(Spacer(1, 15))
         
@@ -581,7 +580,7 @@ class SEOPDFReportGenerator:
             for i, warning in enumerate(r.warnings[:8], 1):
                 story.append(Paragraph(
                     f"<b>{i}.</b> {self._format_issue_for_non_technical(warning)}",
-                    self.styles['BodyText']
+                    self.styles['CustomBody']
                 ))
             story.append(Spacer(1, 15))
         
@@ -597,7 +596,7 @@ class SEOPDFReportGenerator:
             for i, rec in enumerate(r.recommendations[:6], 1):
                 story.append(Paragraph(
                     f"<b>{i}.</b> {self._format_issue_for_non_technical(rec)}",
-                    self.styles['BodyText']
+                    self.styles['CustomBody']
                 ))
         
         story.append(PageBreak())
