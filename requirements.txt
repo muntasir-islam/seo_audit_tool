@@ -1,6 +1,26 @@
-# SEO Audit Tool Requirements
-# For Streamlit Cloud Deployment
-streamlit>=1.28.0
-requests>=2.28.0
-beautifulsoup4>=4.11.0
+# Advanced SEO Audit Tool - 200+ Parameters
+# Version 2.0
+# Author: Muntasir Islam
+
+# Core dependencies
+requests>=2.31.0
+beautifulsoup4>=4.12.0
 lxml>=4.9.0
+
+# Web framework for UI
+streamlit>=1.28.0
+
+# Data processing
+pandas>=2.0.0
+
+# Optional: For enhanced features
+# Uncomment if needed:
+# aiohttp>=3.8.0          # Async HTTP requests
+# selenium>=4.0.0         # JavaScript rendering
+# playwright>=1.40.0      # Alternative JS rendering
+# python-whois>=0.8.0     # Domain information
+# dnspython>=2.4.0        # DNS lookups
+# Pillow>=10.0.0          # Image analysis
+# textstat>=0.7.0         # Advanced readability metrics
+# langdetect>=1.0.0       # Language detection
+# nltk>=3.8.0             # Natural language processing
