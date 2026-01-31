@@ -378,8 +378,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# Import the auditor
-from seo_auditor import AdvancedSEOAuditor, SEOAuditResult, print_audit_report
+# Import the auditor with proper error handling for Streamlit Cloud
+import sys
+import os
+
+# Ensure the current directory is in the path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+try:
+    from seo_auditor import AdvancedSEOAuditor, SEOAuditResult, print_audit_report
+except KeyError:
+    # Handle Python 3.13 import issue - clear and retry
+    if 'seo_auditor' in sys.modules:
+        del sys.modules['seo_auditor']
+    from seo_auditor import AdvancedSEOAuditor, SEOAuditResult, print_audit_report
 
 
 def display_score_card(result):
@@ -723,7 +737,7 @@ def display_content(result):
     if result.top_keywords:
         with st.expander("Top Keywords"):
             df = pd.DataFrame(result.top_keywords, columns=["Keyword", "Count"])
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width=None)
 
 
 def display_mobile_ux(result):
@@ -872,7 +886,6 @@ def display_export(result):
             data=pdf_buffer,
             file_name=f"seo_report_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.pdf",
             mime="application/pdf",
-            use_container_width=True,
             type="primary"
         )
     except ImportError:
@@ -894,8 +907,7 @@ def display_export(result):
             label="JSON Data",
             data=json_data,
             file_name=f"seo_audit_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.json",
-            mime="application/json",
-            use_container_width=True
+            mime="application/json"
         )
     
     with col2:
@@ -904,8 +916,7 @@ def display_export(result):
             label="Text Report",
             data=text_report,
             file_name=f"seo_audit_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.txt",
-            mime="text/plain",
-            use_container_width=True
+            mime="text/plain"
         )
     
     with col3:
@@ -920,8 +931,7 @@ def display_export(result):
             label="CSV Summary",
             data=csv,
             file_name=f"seo_summary_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv",
-            use_container_width=True
+            mime="text/csv"
         )
 
 
@@ -1196,7 +1206,7 @@ def main():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        audit_button = st.button("Run SEO Audit", use_container_width=True)
+        audit_button = st.button("Run SEO Audit")
     
     # Helper function to normalize URL for comparison
     def normalize_url(u):
@@ -1351,7 +1361,7 @@ def main():
         st.markdown("---")
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("Clear & Run New Audit", use_container_width=True):
+            if st.button("Clear & Run New Audit"):
                 st.session_state.audit_result = None
                 st.session_state.audited_url = None
                 # Clear the input fields by removing their keys
