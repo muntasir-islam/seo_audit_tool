@@ -1,7 +1,8 @@
 """
-Advanced SEO Audit Tool - Streamlit Web App (200+ Parameters)
+Advanced SEO Audit Tool - Streamlit Web App (300+ Parameters)
 Author: Muntasir Islam
-Version: 2.0
+Version: 3.0
+Deployed on: Streamlit Cloud
 """
 
 import streamlit as st
@@ -17,12 +18,17 @@ import time
 from collections import Counter
 import pandas as pd
 
-# Page config
+# Page config - MUST be first Streamlit command
 st.set_page_config(
-    page_title="Advanced SEO Audit Tool - 200+ Checks",
+    page_title="SEO Audit Tool - 300+ Checks | Free Online SEO Analyzer",
     page_icon="🔍",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://github.com/muntasir-islam/seo_audit_tool',
+        'Report a bug': 'https://github.com/muntasir-islam/seo_audit_tool/issues',
+        'About': '### 🔍 Advanced SEO Audit Tool\n\n**300+ SEO parameters analyzed**\n\nCreated by Muntasir Islam'
+    }
 )
 
 # Custom CSS
@@ -129,7 +135,7 @@ def display_score_card(result):
             </div>
             <p style="font-size: 1.5rem; color: {score_color}; font-weight: 600;">{grade_emoji} {score_label}</p>
             <p style="color: #94a3b8; margin-top: 10px;">Audited: {result.audit_date}</p>
-            <p style="color: #64748b; font-size: 0.9rem;">200+ Parameters Analyzed</p>
+            <p style="color: #64748b; font-size: 0.9rem;">300+ Parameters Analyzed</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -557,6 +563,28 @@ def display_export(result):
     """Display export options"""
     st.markdown("### 📥 Export Report")
     
+    st.markdown("**📑 Professional PDF Report (Recommended)**")
+    st.caption("Easy-to-understand report perfect for sharing with clients or team members")
+    
+    try:
+        from pdf_report_generator import generate_pdf_report
+        pdf_buffer = generate_pdf_report(result)
+        st.download_button(
+            label="📑 Download PDF Report (Easy to Read)",
+            data=pdf_buffer,
+            file_name=f"seo_report_{urlparse(result.url).netloc}_{datetime.now().strftime('%Y%m%d')}.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            type="primary"
+        )
+    except ImportError:
+        st.warning("PDF generation requires 'reportlab'. Install with: pip install reportlab")
+    except Exception as e:
+        st.error(f"Error generating PDF: {str(e)}")
+    
+    st.markdown("---")
+    st.markdown("**Other Export Formats**")
+    
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -598,11 +626,183 @@ def display_export(result):
         )
 
 
+def display_crawling_indexing(result):
+    """Display crawling & indexing analysis"""
+    st.markdown("### 📈 Crawling & Indexing")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Score", f"{result.crawling_score}/100")
+    col2.metric("Indexable", "✅ Yes" if result.is_indexable else "❌ No")
+    col3.metric("URL Depth", result.url_depth)
+    col4.metric("URL Length", f"{result.url_length} chars")
+    
+    st.markdown("**URL Analysis**")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.write(f"{'✅' if result.url_structure_friendly else '❌'} SEO-Friendly URL")
+    col2.write(f"{'✅' if not result.url_has_parameters else '⚠️'} {'No' if not result.url_has_parameters else 'Has'} Query Params")
+    col3.write(f"{'✅' if not result.url_has_underscores else '⚠️'} {'No' if not result.url_has_underscores else 'Has'} Underscores")
+    col4.write(f"{'✅' if result.url_length <= 75 else '⚠️'} URL Length {'OK' if result.url_length <= 75 else 'Long'}")
+    
+    st.markdown("**Indexability Signals**")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.write(f"{'❌ Blocked' if result.robots_txt_blocks_url else '✅ Allowed'} by robots.txt")
+        st.write(f"X-Robots-Tag: {result.x_robots_tag or 'Not set'}")
+    with col2:
+        st.write(f"{'⚠️ Redirect Chain' if result.has_redirect_chain else '✅ No'} Redirect Chain")
+        if result.has_redirect_chain:
+            st.caption(f"Chain length: {result.redirect_chain_length}")
+    with col3:
+        st.write(f"{'❌' if result.has_5xx_error else '✅'} {'5xx Error' if result.has_5xx_error else 'No Server Errors'}")
+        st.write(f"{'✅' if result.has_noindex_system_pages else '⚠️'} System Pages Noindexed")
+
+
+def display_content_quality(result):
+    """Display content quality analysis"""
+    st.markdown("### ✍️ Content Quality & E-E-A-T")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Score", f"{result.content_quality_score}/100")
+    col2.metric("Thin Content", "❌ Yes" if result.has_thin_content else "✅ No")
+    col3.metric("Unique Content", "✅ Yes" if result.content_is_unique else "⚠️ Check")
+    col4.metric("E-E-A-T Signals", "✅ Yes" if result.has_eeat_signals else "⚠️ Missing")
+    
+    st.markdown("**Trust & Authority Signals**")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.write(f"{'✅' if result.has_privacy_policy else '❌'} Privacy Policy")
+    col2.write(f"{'✅' if result.has_contact_page else '❌'} Contact Page")
+    col3.write(f"{'✅' if result.has_about_page else '❌'} About Page")
+    col4.write(f"{'✅' if result.has_author_info else '❌'} Author Info")
+    
+    if result.author_name:
+        st.caption(f"Author: {result.author_name}")
+    
+    st.markdown("**Content Dates**")
+    col1, col2 = st.columns(2)
+    col1.write(f"Published: {result.publication_date or 'Not specified'}")
+    col2.write(f"Modified: {result.modified_date or 'Not specified'}")
+    
+    st.markdown("**Content Issues**")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.write(f"{'❌ Found' if result.has_hidden_text else '✅ None'} Hidden Text")
+    col2.write(f"{'❌ Heavy' if result.has_heavy_above_fold_ads else '✅ OK'} Above-Fold Ads")
+    col3.write(f"{'❌ Found' if result.content_in_iframes else '✅ None'} Content in iFrames")
+    col4.write(f"{'❌ Found' if result.has_intrusive_interstitials else '✅ None'} Intrusive Popups")
+    
+    st.markdown("**Content Best Practices**")
+    col1, col2 = st.columns(2)
+    col1.write(f"{'✅' if result.has_clear_cta else '⚠️'} Clear Call-to-Action")
+    col2.write(f"{'✅' if result.uses_semantic_html else '⚠️'} Semantic HTML")
+
+
+def display_keyword_analysis(result):
+    """Display keyword optimization analysis"""
+    st.markdown("### 🗝️ Keyword Analysis")
+    
+    if result.target_keyword:
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Score", f"{result.keyword_analysis_score}/100")
+        col2.metric("Target Keyword", result.target_keyword)
+        col3.metric("Occurrences", result.keyword_count_in_body)
+        col4.metric("Density", f"{result.keyword_density_percent:.2f}%")
+        
+        st.markdown("**Keyword Placement**")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.write(f"{'✅' if result.keyword_in_title else '❌'} In Title Tag")
+            if result.keyword_in_title:
+                pos_text = "Front" if result.keyword_in_title_position == 1 else "Middle/End"
+                st.caption(f"Position: {pos_text}")
+            st.write(f"{'✅' if result.title_starts_with_keyword else '⚠️'} Title Starts with Keyword")
+        
+        with col2:
+            st.write(f"{'✅' if result.keyword_in_meta_desc else '❌'} In Meta Description")
+            st.write(f"{'✅' if result.keyword_in_h1 else '❌'} In H1 Tag")
+        
+        with col3:
+            st.write(f"{'✅' if result.keyword_in_h2 else '❌'} In H2 Tags")
+            st.write(f"{'✅' if result.keyword_in_first_paragraph else '❌'} In First 100 Words")
+        
+        st.markdown("**Keyword Usage**")
+        if result.keyword_overuse:
+            st.warning("⚠️ Keyword may be overused (density > 3%). Consider reducing for natural content.")
+        elif result.keyword_density_percent < 0.5:
+            st.info("💡 Consider using keyword more naturally in content (current density < 0.5%)")
+        else:
+            st.success("✅ Keyword density appears optimal (0.5-3%)")
+    else:
+        st.info("💡 Enter a target keyword when running the audit to see keyword optimization analysis")
+
+
+def display_mobile_advanced(result):
+    """Display advanced mobile analysis"""
+    st.markdown("### 📱 Advanced Mobile Optimization")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Score", f"{result.mobile_advanced_score}/100")
+    col2.metric("Page Weight", f"{result.mobile_page_weight_kb:.0f} KB")
+    col3.metric("Heavy Page", "❌ Yes" if result.mobile_page_heavy else "✅ No")
+    col4.metric("Mobile Friendly", "✅ Yes" if result.is_mobile_friendly else "❌ No")
+    
+    st.markdown("**Mobile Usability**")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.write(f"{'✅' if result.tap_targets_sized_correctly else '❌'} Tap Targets Sized")
+        if result.tap_target_issues > 0:
+            st.caption(f"Issues: {result.tap_target_issues} elements")
+    
+    with col2:
+        st.write(f"{'✅' if result.font_sizes_readable else '❌'} Readable Font Sizes")
+        if result.small_font_elements > 0:
+            st.caption(f"Small fonts: {result.small_font_elements}")
+    
+    with col3:
+        st.write(f"{'✅' if result.content_width_fits_viewport else '⚠️'} Content Fits Viewport")
+    
+    st.markdown("**Mobile Navigation & Images**")
+    col1, col2, col3 = st.columns(3)
+    col1.write(f"{'✅' if result.mobile_navigation_friendly else '⚠️'} Mobile-Friendly Navigation")
+    col2.write(f"{'✅' if result.thumb_friendly_navigation else '⚠️'} Thumb-Friendly Nav")
+    col3.write(f"{'✅' if result.has_responsive_images else '⚠️'} Responsive Images")
+    
+    st.markdown("**Mobile-Desktop Parity**")
+    col1, col2, col3 = st.columns(3)
+    col1.write(f"{'✅' if result.mobile_desktop_parity else '⚠️'} Content Parity")
+    col2.write(f"{'✅' if result.mobile_meta_parity else '⚠️'} Meta Tags Parity")
+    col3.write(f"{'✅' if result.mobile_directives_parity else '⚠️'} Directives Parity")
+    col4 = st.columns(1)[0]
+    col4.write(f"{'✅' if result.favicon_in_mobile_serps else '⚠️'} Favicon for Mobile SERPs")
+
+
+def display_page_elements(result):
+    """Display page elements analysis"""
+    st.markdown("### 💡 Page Elements Analysis")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Score", f"{result.page_elements_score}/100")
+    col2.metric("Multiple H1s", "❌ Yes" if result.has_multiple_h1 else "✅ No")
+    col3.metric("Title-Content Match", "✅ Yes" if result.title_matches_content else "⚠️ Check")
+    col4.metric("Unique Meta Desc", "✅ Yes" if result.meta_desc_is_unique else "⚠️ Check")
+    
+    st.markdown("**Content Structure**")
+    col1, col2, col3 = st.columns(3)
+    col1.write(f"{'✅' if result.primary_content_clear else '⚠️'} Primary Content Clear")
+    col2.write(f"{'✅' if result.supplementary_content_marked else '⚠️'} Supplementary Content Marked")
+    col3.write(f"{'✅' if result.meta_desc_compelling else '⚠️'} Compelling Meta Description")
+    
+    st.markdown("**Visual & Accessibility**")
+    col1, col2 = st.columns(2)
+    col1.write(f"{'✅' if result.text_contrast_sufficient else '⚠️'} Sufficient Text Contrast")
+    col2.write(f"{'✅' if result.links_distinguishable else '⚠️'} Links Distinguishable")
+
+
 def main():
     # Sidebar
     with st.sidebar:
         st.title("🔍 SEO Audit Tool")
-        st.markdown("**Version 2.0 - 200+ Parameters**")
+        st.markdown("**Version 3.0 - 300+ Parameters**")
         st.markdown("---")
         
         st.markdown("""
@@ -619,6 +819,15 @@ def main():
         - 🏪 E-commerce (15+ checks)
         - ♿ Accessibility (15+ checks)
         - ⚡ Performance (10+ checks)
+        - 📈 Crawling & Indexing (15+ checks)
+        - ✍️ Content Quality/E-E-A-T (20+ checks)
+        - 🗝️ Keyword Analysis (15+ checks)
+        - 📱 Advanced Mobile (20+ checks)
+        - 💡 Page Elements (15+ checks)
+        
+        ---
+        
+        **Plerdy Checklist Compliant**
         
         ---
         
@@ -631,7 +840,7 @@ def main():
     
     # Main content
     st.title("🔍 Advanced SEO Audit Tool")
-    st.markdown("Enterprise-grade SEO analysis with **200+ parameters**. Enter a URL below to start.")
+    st.markdown("Enterprise-grade SEO analysis with **300+ parameters** - Plerdy Checklist Compliant. Enter a URL below to start.")
     
     # Input row
     col1, col2 = st.columns([3, 1])
@@ -655,7 +864,7 @@ def main():
         audit_button = st.button("🚀 Run Advanced SEO Audit", use_container_width=True)
     
     if audit_button and url:
-        with st.spinner("🔍 Analyzing 200+ SEO parameters... This may take 10-20 seconds."):
+        with st.spinner("🔍 Analyzing 300+ SEO parameters... This may take 10-20 seconds."):
             progress = st.progress(0)
             status = st.empty()
             
@@ -682,12 +891,14 @@ def main():
                 
                 st.divider()
                 
-                # Use tabs for organization
-                tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                # Use tabs for organization - 7 tabs now
+                tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
                     "📋 Meta & Social",
                     "📝 Content & Structure",
                     "⚙️ Technical",
                     "📱 Mobile & A11y",
+                    "📈 Crawling & Indexing",
+                    "🗝️ Keywords & Quality",
                     "🚨 Issues"
                 ])
                 
@@ -709,9 +920,13 @@ def main():
                     display_technical(result)
                     st.divider()
                     display_performance(result)
+                    st.divider()
+                    display_page_elements(result)
                 
                 with tab4:
                     display_mobile_ux(result)
+                    st.divider()
+                    display_mobile_advanced(result)
                     st.divider()
                     display_i18n(result)
                     st.divider()
@@ -720,6 +935,14 @@ def main():
                     display_accessibility(result)
                 
                 with tab5:
+                    display_crawling_indexing(result)
+                
+                with tab6:
+                    display_keyword_analysis(result)
+                    st.divider()
+                    display_content_quality(result)
+                
+                with tab7:
                     display_issues(result)
                 
                 st.divider()
@@ -727,16 +950,38 @@ def main():
                 
             else:
                 st.error("❌ Failed to audit the website. Please check the URL and try again.")
+                st.info("💡 **Tips:**\n- Make sure the URL is accessible\n- Try with 'https://' prefix\n- Some websites block automated requests")
     
     elif audit_button and not url:
         st.warning("⚠️ Please enter a URL to audit")
     
     # Footer
     st.markdown("---")
+    
+    # Social sharing and GitHub
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("""
+        <div style="text-align: center; padding: 10px;">
+            <a href="https://github.com/muntasir-islam/seo_audit_tool" target="_blank" style="text-decoration: none;">
+                ⭐ Star on GitHub
+            </a>
+            &nbsp;|&nbsp;
+            <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20free%20SEO%20Audit%20Tool%20with%20300%2B%20parameters!&url=https://seo-audit-tool.streamlit.app" target="_blank" style="text-decoration: none;">
+                🐦 Share on Twitter
+            </a>
+            &nbsp;|&nbsp;
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://seo-audit-tool.streamlit.app" target="_blank" style="text-decoration: none;">
+                💼 Share on LinkedIn
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.markdown("""
     <div style="text-align: center; color: #64748b; padding: 20px;">
-        <p>Made with ❤️ by <a href="https://muntasir-islam.github.io" target="_blank">Muntasir Islam</a></p>
-        <p>© 2026 | Advanced SEO Audit Tool v2.0 - 200+ Parameters</p>
+        <p>Made with ❤️ by <a href="https://muntasir-islam.github.io" target="_blank" style="color: #6366f1;">Muntasir Islam</a></p>
+        <p>© 2026 | Advanced SEO Audit Tool v3.0 - 300+ Parameters</p>
+        <p style="font-size: 0.8rem;">🔒 No data stored • 🚀 Powered by Streamlit</p>
     </div>
     """, unsafe_allow_html=True)
 

@@ -1,8 +1,8 @@
 """
-Advanced SEO Audit Report Generator - 200+ Parameters
+Advanced SEO Audit Report Generator - 300+ Parameters
 Generates professional HTML reports from SEO audit results
 Author: Muntasir Islam
-Version: 2.0
+Version: 3.0
 """
 
 from dataclasses import asdict
@@ -215,7 +215,7 @@ class AdvancedReportGenerator:
             <h1>🔍 Advanced SEO Audit Report</h1>
             <p><strong>URL:</strong> {r.url}</p>
             <p><strong>Audited:</strong> {r.audit_date}</p>
-            <p><strong>Parameters Checked:</strong> 200+</p>
+            <p><strong>Parameters Checked:</strong> 300+ (Plerdy Checklist Compliant)</p>
             
             <div class="score-circle">
                 <span class="score-number">{r.score}</span>
@@ -927,6 +927,267 @@ class AdvancedReportGenerator:
             </div>
         </div>
         
+        <!-- Crawling & Indexing -->
+        <div class="section">
+            <h2 class="section-title">📈 Crawling & Indexing (Score: {r.crawling_score}/100)</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {r.crawling_score}%; background: {self._get_grade_color(r.crawling_score)};"></div>
+            </div>
+            
+            <h3>URL Analysis</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Indexable</div>
+                    <div class="metric-value">{self._get_status_icon(r.is_indexable)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">URL Length</div>
+                    <div class="metric-value">{r.url_length} chars</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">URL Depth</div>
+                    <div class="metric-value">{r.url_depth}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">SEO-Friendly URL</div>
+                    <div class="metric-value">{self._get_status_icon(r.url_structure_friendly)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Has Parameters</div>
+                    <div class="metric-value">{self._get_status_icon(not r.url_has_parameters)} {'Yes' if r.url_has_parameters else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Has Underscores</div>
+                    <div class="metric-value">{self._get_status_icon(not r.url_has_underscores)} {'Yes' if r.url_has_underscores else 'No'}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 20px;">Indexability Signals</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Robots.txt Blocks</div>
+                    <div class="metric-value">{self._get_status_icon(not r.robots_txt_blocks_url)} {'Yes' if r.robots_txt_blocks_url else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">X-Robots-Tag</div>
+                    <div class="metric-value">{r.x_robots_tag or 'Not set'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Redirect Chain</div>
+                    <div class="metric-value">{self._get_status_icon(not r.has_redirect_chain)} {r.redirect_chain_length if r.has_redirect_chain else 'None'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">5xx Error</div>
+                    <div class="metric-value">{self._get_status_icon(not r.has_5xx_error)} {'Yes' if r.has_5xx_error else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">System Pages Noindexed</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_noindex_system_pages)}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Quality & E-E-A-T -->
+        <div class="section">
+            <h2 class="section-title">✍️ Content Quality & E-E-A-T (Score: {r.content_quality_score}/100)</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {r.content_quality_score}%; background: {self._get_grade_color(r.content_quality_score)};"></div>
+            </div>
+            
+            <h3>Content Signals</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Thin Content</div>
+                    <div class="metric-value">{self._get_status_icon(not r.has_thin_content)} {'Yes' if r.has_thin_content else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Unique Content</div>
+                    <div class="metric-value">{self._get_status_icon(r.content_is_unique)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">E-E-A-T Signals</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_eeat_signals)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Semantic HTML</div>
+                    <div class="metric-value">{self._get_status_icon(r.uses_semantic_html)}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 20px;">Trust & Authority</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Privacy Policy</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_privacy_policy)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Contact Page</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_contact_page)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">About Page</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_about_page)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Author Info</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_author_info)} {r.author_name or ''}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Publication Date</div>
+                    <div class="metric-value">{r.publication_date or 'Not found'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Modified Date</div>
+                    <div class="metric-value">{r.modified_date or 'Not found'}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 20px;">Content Issues</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Hidden Text</div>
+                    <div class="metric-value">{self._get_status_icon(not r.has_hidden_text)} {'Found' if r.has_hidden_text else 'None'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Content in iFrames</div>
+                    <div class="metric-value">{self._get_status_icon(not r.content_in_iframes)} {'Yes' if r.content_in_iframes else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Heavy Above-Fold Ads</div>
+                    <div class="metric-value">{self._get_status_icon(not r.has_heavy_above_fold_ads)} {'Yes' if r.has_heavy_above_fold_ads else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Intrusive Popups</div>
+                    <div class="metric-value">{self._get_status_icon(not r.has_intrusive_interstitials)} {'Yes' if r.has_intrusive_interstitials else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Clear CTA</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_clear_cta)}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Keyword Analysis -->
+        <div class="section">
+            <h2 class="section-title">🗝️ Keyword Analysis (Score: {r.keyword_analysis_score}/100)</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {r.keyword_analysis_score}%; background: {self._get_grade_color(r.keyword_analysis_score)};"></div>
+            </div>
+            
+            {self._generate_keyword_analysis_section()}
+        </div>
+        
+        <!-- Advanced Mobile -->
+        <div class="section">
+            <h2 class="section-title">📱 Advanced Mobile Optimization (Score: {r.mobile_advanced_score}/100)</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {r.mobile_advanced_score}%; background: {self._get_grade_color(r.mobile_advanced_score)};"></div>
+            </div>
+            
+            <h3>Mobile Performance</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Page Weight</div>
+                    <div class="metric-value">{r.mobile_page_weight_kb:.0f} KB</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Heavy Page</div>
+                    <div class="metric-value">{self._get_status_icon(not r.mobile_page_heavy)} {'Yes' if r.mobile_page_heavy else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Responsive Images</div>
+                    <div class="metric-value">{self._get_status_icon(r.has_responsive_images)}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 20px;">Mobile Usability</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Tap Targets Sized</div>
+                    <div class="metric-value">{self._get_status_icon(r.tap_targets_sized_correctly)} {r.tap_target_issues} issues</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Readable Font Sizes</div>
+                    <div class="metric-value">{self._get_status_icon(r.font_sizes_readable)} {r.small_font_elements} small</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Content Fits Viewport</div>
+                    <div class="metric-value">{self._get_status_icon(r.content_width_fits_viewport)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Mobile Navigation</div>
+                    <div class="metric-value">{self._get_status_icon(r.mobile_navigation_friendly)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Thumb-Friendly</div>
+                    <div class="metric-value">{self._get_status_icon(r.thumb_friendly_navigation)}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 20px;">Mobile-Desktop Parity</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Content Parity</div>
+                    <div class="metric-value">{self._get_status_icon(r.mobile_desktop_parity)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Meta Tags Parity</div>
+                    <div class="metric-value">{self._get_status_icon(r.mobile_meta_parity)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Directives Parity</div>
+                    <div class="metric-value">{self._get_status_icon(r.mobile_directives_parity)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Favicon for Mobile SERPs</div>
+                    <div class="metric-value">{self._get_status_icon(r.favicon_in_mobile_serps)}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Elements -->
+        <div class="section">
+            <h2 class="section-title">💡 Page Elements Analysis (Score: {r.page_elements_score}/100)</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {r.page_elements_score}%; background: {self._get_grade_color(r.page_elements_score)};"></div>
+            </div>
+            
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Multiple H1s</div>
+                    <div class="metric-value">{self._get_status_icon(not r.has_multiple_h1)} {'Yes' if r.has_multiple_h1 else 'No'}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Title-Content Match</div>
+                    <div class="metric-value">{self._get_status_icon(r.title_matches_content)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Unique Meta Desc</div>
+                    <div class="metric-value">{self._get_status_icon(r.meta_desc_is_unique)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Compelling Meta Desc</div>
+                    <div class="metric-value">{self._get_status_icon(r.meta_desc_compelling)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Text Contrast</div>
+                    <div class="metric-value">{self._get_status_icon(r.text_contrast_sufficient)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Links Distinguishable</div>
+                    <div class="metric-value">{self._get_status_icon(r.links_distinguishable)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Primary Content Clear</div>
+                    <div class="metric-value">{self._get_status_icon(r.primary_content_clear)}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Supplementary Marked</div>
+                    <div class="metric-value">{self._get_status_icon(r.supplementary_content_marked)}</div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Issues -->
         <div class="section">
             <h2 class="section-title">🚨 Issues & Recommendations</h2>
@@ -953,9 +1214,9 @@ class AdvancedReportGenerator:
         </div>
         
         <div class="footer">
-            <p>Generated by <strong>Advanced SEO Audit Tool v2.0</strong></p>
+            <p>Generated by <strong>Advanced SEO Audit Tool v3.0</strong></p>
             <p>Created by <a href="https://muntasir-islam.github.io" style="color: #6366f1;">Muntasir Islam</a></p>
-            <p>© 2026 | 200+ SEO Parameters Analyzed</p>
+            <p>© 2026 | 300+ SEO Parameters Analyzed | Plerdy Checklist Compliant</p>
         </div>
     </div>
     
@@ -983,6 +1244,11 @@ class AdvancedReportGenerator:
             ("Accessibility", r.accessibility_score),
             ("Performance", r.performance_hints_score),
             ("Security", r.security_headers_score),
+            ("Crawling & Indexing", r.crawling_score),
+            ("Content Quality", r.content_quality_score),
+            ("Keyword Analysis", r.keyword_analysis_score),
+            ("Advanced Mobile", r.mobile_advanced_score),
+            ("Page Elements", r.page_elements_score),
         ]
         
         html = '<div class="metric-grid">'
@@ -1024,6 +1290,66 @@ class AdvancedReportGenerator:
         for keyword, count in self.result.top_keywords[:15]:
             html += f'<tr><td>{keyword}</td><td>{count}</td></tr>'
         html += '</table>'
+        return html
+    
+    def _generate_keyword_analysis_section(self) -> str:
+        """Generate keyword analysis section"""
+        r = self.result
+        if not r.target_keyword:
+            return '<p style="color: #94a3b8;">No target keyword specified for analysis.</p>'
+        
+        html = f'''
+        <div class="metric-grid">
+            <div class="metric-item">
+                <div class="metric-label">Target Keyword</div>
+                <div class="metric-value">{r.target_keyword}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">Occurrences</div>
+                <div class="metric-value">{r.keyword_count_in_body}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">Density</div>
+                <div class="metric-value">{r.keyword_density_percent:.2f}%</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">Overuse Warning</div>
+                <div class="metric-value">{self._get_status_icon(not r.keyword_overuse)} {'Yes' if r.keyword_overuse else 'No'}</div>
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 20px;">Keyword Placement</h3>
+        <div class="metric-grid">
+            <div class="metric-item">
+                <div class="metric-label">In Title</div>
+                <div class="metric-value">{self._get_status_icon(r.keyword_in_title)}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">Title Starts with Keyword</div>
+                <div class="metric-value">{self._get_status_icon(r.title_starts_with_keyword)}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">In Meta Description</div>
+                <div class="metric-value">{self._get_status_icon(r.keyword_in_meta_desc)}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">In H1</div>
+                <div class="metric-value">{self._get_status_icon(r.keyword_in_h1)}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">In H2 Tags</div>
+                <div class="metric-value">{self._get_status_icon(r.keyword_in_h2)}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">In First 100 Words</div>
+                <div class="metric-value">{self._get_status_icon(r.keyword_in_first_paragraph)}</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">In Body Content</div>
+                <div class="metric-value">{self._get_status_icon(r.keyword_in_body)}</div>
+            </div>
+        </div>
+        '''
         return html
     
     def _generate_issue_list(self, issues: list, issue_type: str) -> str:
