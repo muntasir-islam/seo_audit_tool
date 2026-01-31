@@ -1201,7 +1201,18 @@ class AdvancedSEOAuditor:
                 pass
         
         if result['has_schema']:
-            self.issues["passed"].append(f"Schema markup found: {', '.join(result['schema_types'][:3])}")
+            # Flatten and stringify schema types to avoid non-string items
+            flat_types = []
+            for item in result['schema_types']:
+                if isinstance(item, list):
+                    flat_types.extend(item)
+                else:
+                    flat_types.append(item)
+            safe_types = [str(t) for t in flat_types if t]
+            if safe_types:
+                self.issues["passed"].append(f"Schema markup found: {', '.join(safe_types[:3])}")
+            else:
+                self.issues["passed"].append("Schema markup found")
         else:
             self.issues["recommendations"].append("Add Schema.org structured data markup")
         
