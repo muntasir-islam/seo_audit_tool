@@ -737,7 +737,7 @@ def display_content(result):
     if result.top_keywords:
         with st.expander("Top Keywords"):
             df = pd.DataFrame(result.top_keywords, columns=["Keyword", "Count"])
-            st.dataframe(df, width=None)
+            st.dataframe(df)
 
 
 def display_mobile_ux(result):
