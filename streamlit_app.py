@@ -1182,27 +1182,36 @@ def main():
             "Website URL",
             placeholder="example.com or https://example.com",
             help="Enter the full URL of the page you want to audit",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="url_input"
         )
     
     with col2:
         keyword = st.text_input(
             "Target Keyword (optional)",
             placeholder="seo audit",
-            help="Enter your target keyword to check optimization"
+            help="Enter your target keyword to check optimization",
+            key="keyword_input"
         )
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         audit_button = st.button("Run SEO Audit", use_container_width=True)
     
+    # Helper function to normalize URL for comparison
+    def normalize_url(u):
+        if not u:
+            return ""
+        u = u.strip()
+        if not u.startswith(('http://', 'https://')):
+            u = 'https://' + u
+        return u.rstrip('/')
+    
     # Run audit when button is clicked
     if audit_button and url:
-        # Clear previous results if auditing a new URL
-        if st.session_state.audited_url != url:
-            st.session_state.audit_result = None
-            st.session_state.audited_url = None
+        normalized_input_url = normalize_url(url)
         
+        # Always run a fresh audit when button is clicked
         with st.spinner("Analyzing 300+ SEO parameters... This may take 10-20 seconds."):
             progress = st.progress(0)
             status = st.empty()
@@ -1219,7 +1228,14 @@ def main():
             status.text("Running comprehensive analysis...")
             progress.progress(40)
             
+            # Debug: Print URL being audited
+            print(f"DEBUG: Auditing URL: {auditor.url}")
+            
             result = auditor.run_audit()
+            
+            # Debug: Print score if result exists
+            if result:
+                print(f"DEBUG: Audit completed. Score: {result.score}, Title: {result.title}")
             
             progress.progress(100)
             status.empty()
@@ -1227,7 +1243,9 @@ def main():
             if result:
                 # Store in session state to persist across reruns
                 st.session_state.audit_result = result
-                st.session_state.audited_url = url
+                st.session_state.audited_url = normalized_input_url
+                # Show the URL and score for verification
+                st.toast(f"✅ Audit complete! Score: {result.score} for {result.url}")
                 st.rerun()  # Rerun to display results cleanly
             else:
                 st.error("Failed to audit the website. Please check the URL and try again.")
@@ -1241,7 +1259,8 @@ def main():
         result = st.session_state.audit_result
         
         # Show info about which URL these results are for
-        if url and url != st.session_state.audited_url:
+        current_normalized = normalize_url(url) if url else ""
+        if url and current_normalized != st.session_state.audited_url:
             st.info(f"💡 Showing results for: **{st.session_state.audited_url}**. Click 'Run SEO Audit' to analyze the new URL.")
         
         st.success(f"Audit complete for {result.url}")
@@ -1316,6 +1335,11 @@ def main():
             if st.button("Clear & Run New Audit", use_container_width=True):
                 st.session_state.audit_result = None
                 st.session_state.audited_url = None
+                # Clear the input fields by removing their keys
+                if 'url_input' in st.session_state:
+                    del st.session_state.url_input
+                if 'keyword_input' in st.session_state:
+                    del st.session_state.keyword_input
                 st.rerun()
     
     # Footer
