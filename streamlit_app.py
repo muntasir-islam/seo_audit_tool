@@ -1098,6 +1098,12 @@ def display_page_elements(result):
 
 
 def main():
+    # Initialize session state for storing audit results
+    if 'audit_result' not in st.session_state:
+        st.session_state.audit_result = None
+    if 'audited_url' not in st.session_state:
+        st.session_state.audited_url = None
+    
     # Sidebar
     with st.sidebar:
         st.markdown("""
@@ -1190,7 +1196,13 @@ def main():
     with col2:
         audit_button = st.button("Run SEO Audit", use_container_width=True)
     
+    # Run audit when button is clicked
     if audit_button and url:
+        # Clear previous results if auditing a new URL
+        if st.session_state.audited_url != url:
+            st.session_state.audit_result = None
+            st.session_state.audited_url = None
+        
         with st.spinner("Analyzing 300+ SEO parameters... This may take 10-20 seconds."):
             progress = st.progress(0)
             status = st.empty()
@@ -1198,10 +1210,14 @@ def main():
             status.text("Initializing audit...")
             progress.progress(10)
             
+            # Create a fresh auditor instance for each audit
             auditor = AdvancedSEOAuditor(url, target_keyword=keyword if keyword else None)
             
             status.text("Fetching page content...")
             progress.progress(20)
+            
+            status.text("Running comprehensive analysis...")
+            progress.progress(40)
             
             result = auditor.run_audit()
             
@@ -1209,77 +1225,98 @@ def main():
             status.empty()
             
             if result:
-                st.success(f"Audit complete for {result.url}")
-                
-                # Display all sections
-                display_score_card(result)
-                display_quick_stats(result)
-                
-                st.divider()
-                
-                # Use tabs for organization - 7 tabs now
-                tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-                    "Meta & Social",
-                    "Content & Structure",
-                    "Technical",
-                    "Mobile & A11y",
-                    "Crawling & Indexing",
-                    "Keywords & Quality",
-                    "Issues"
-                ])
-                
-                with tab1:
-                    display_meta_tags(result)
-                    st.divider()
-                    display_social_tags(result)
-                
-                with tab2:
-                    display_headings(result)
-                    st.divider()
-                    display_images(result)
-                    st.divider()
-                    display_links(result)
-                    st.divider()
-                    display_content(result)
-                
-                with tab3:
-                    display_technical(result)
-                    st.divider()
-                    display_performance(result)
-                    st.divider()
-                    display_page_elements(result)
-                
-                with tab4:
-                    display_mobile_ux(result)
-                    st.divider()
-                    display_mobile_advanced(result)
-                    st.divider()
-                    display_i18n(result)
-                    st.divider()
-                    display_ecommerce(result)
-                    st.divider()
-                    display_accessibility(result)
-                
-                with tab5:
-                    display_crawling_indexing(result)
-                
-                with tab6:
-                    display_keyword_analysis(result)
-                    st.divider()
-                    display_content_quality(result)
-                
-                with tab7:
-                    display_issues(result)
-                
-                st.divider()
-                display_export(result)
-                
+                # Store in session state to persist across reruns
+                st.session_state.audit_result = result
+                st.session_state.audited_url = url
+                st.rerun()  # Rerun to display results cleanly
             else:
                 st.error("Failed to audit the website. Please check the URL and try again.")
                 st.info("**Tips:**\n- Make sure the URL is accessible\n- Try with 'https://' prefix\n- Some websites block automated requests")
     
     elif audit_button and not url:
         st.warning("Please enter a URL to audit")
+    
+    # Display results if available in session state
+    if st.session_state.audit_result is not None:
+        result = st.session_state.audit_result
+        
+        # Show info about which URL these results are for
+        if url and url != st.session_state.audited_url:
+            st.info(f"💡 Showing results for: **{st.session_state.audited_url}**. Click 'Run SEO Audit' to analyze the new URL.")
+        
+        st.success(f"Audit complete for {result.url}")
+        
+        # Display all sections
+        display_score_card(result)
+        display_quick_stats(result)
+        
+        st.divider()
+        
+        # Use tabs for organization - 7 tabs now
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+            "Meta & Social",
+            "Content & Structure",
+            "Technical",
+            "Mobile & A11y",
+            "Crawling & Indexing",
+            "Keywords & Quality",
+            "Issues"
+        ])
+        
+        with tab1:
+            display_meta_tags(result)
+            st.divider()
+            display_social_tags(result)
+        
+        with tab2:
+            display_headings(result)
+            st.divider()
+            display_images(result)
+            st.divider()
+            display_links(result)
+            st.divider()
+            display_content(result)
+        
+        with tab3:
+            display_technical(result)
+            st.divider()
+            display_performance(result)
+            st.divider()
+            display_page_elements(result)
+        
+        with tab4:
+            display_mobile_ux(result)
+            st.divider()
+            display_mobile_advanced(result)
+            st.divider()
+            display_i18n(result)
+            st.divider()
+            display_ecommerce(result)
+            st.divider()
+            display_accessibility(result)
+        
+        with tab5:
+            display_crawling_indexing(result)
+        
+        with tab6:
+            display_keyword_analysis(result)
+            st.divider()
+            display_content_quality(result)
+        
+        with tab7:
+            display_issues(result)
+        
+        st.divider()
+        display_export(result)
+        
+        # Add a button to clear results and run new audit
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("Clear & Run New Audit", use_container_width=True):
+                st.session_state.audit_result = None
+                st.session_state.audited_url = None
+                st.rerun()
     
     # Footer
     st.markdown("""
